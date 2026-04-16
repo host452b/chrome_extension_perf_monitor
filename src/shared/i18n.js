@@ -1,168 +1,137 @@
-// i18n — auto-detect browser language, fallback to English
 const _lang = (typeof navigator !== 'undefined' && navigator.language || 'en').slice(0, 2);
 
 const _strings = {
   en: {
-    // Header
-    appName: 'Perf Monitor',
+    appName: 'Extension Audit',
 
-    // Status
-    statusHealthy: 'Status: All clear',
-    statusWarning: 'Status: Some extensions need attention',
-    statusCritical: 'Status: Multiple high-impact extensions detected',
+    statusHealthy: 'All extensions look clean',
+    statusWarning: 'Some extensions have broad permissions',
+    statusCritical: 'Multiple high-risk extensions detected',
 
-    // KPI cards
     kpiActive: 'Active',
-    kpiRequests: 'Requests',
-    kpiTraffic: 'Traffic',
+    kpiHighRisk: 'High Risk',
+    kpiMedRisk: 'Medium',
     kpiWarnings: 'Alerts',
 
-    // Tabs
-    tabOverview: 'Overview',
-    tabDetails: 'Details',
-    tabSettings: 'Settings',
+    scoreLabel: 'Risk',
+    scoreLow: 'Low Risk',
+    scoreMedium: 'Medium Risk',
+    scoreHigh: 'High Risk',
+    scoreTooltip: 'Risk Score = permission sensitivity (60%) + content script scope (40%)',
 
-    // Overview
-    networkActivity: 'Network Activity (Last 30 min)',
-    consumptionByExt: 'Traffic Share by Extension',
-    noTraffic: 'No traffic recorded yet — browse a few pages and check back',
-
-    // Score — the key explanation
-    scoreLabel: 'Impact',
-    scoreLow: 'Low Impact',
-    scoreMedium: 'Moderate Impact',
-    scoreHigh: 'High Impact',
-    scoreTooltip: 'Impact Score: permissions breadth + network activity + content script scope',
-
-    // Details
+    consumptionByExt: 'Extensions by Risk',
     searchPlaceholder: 'Search extensions...',
-    sortScore: 'Impact',
-    sortTraffic: 'Traffic',
-    sortRequests: 'Requests',
-    detailRequests: 'Requests sent',
-    detailTraffic: 'Data transferred',
-    detailContentScripts: 'Injected pages',
+    sortScore: 'Risk',
+    sortPerms: 'Permissions',
+    detailSensitivePerms: 'Sensitive permissions',
+    detailContentScripts: 'Content script scope',
     detailAllSites: 'All websites',
     detailPatterns: 'pattern(s)',
     detailNone: 'None',
-    sectionPermissions: 'Permissions',
-    sectionTopDomains: 'Top Requested Domains',
+    sectionPermissions: 'All Permissions',
     btnDisable: 'Disable This Extension',
     btnDisabled: 'Already Disabled',
-    btnConfirm: 'Tap again to confirm',
+    btnConfirm: 'Click again to confirm',
     noExtensions: 'No extensions found',
 
-    // Settings
     settingRefreshRate: 'Dashboard Refresh Speed',
-    settingRefreshDesc: 'How often the data updates on screen',
-    settingRefreshLow: 'Slow (60s)',
-    settingRefreshMid: 'Normal (30s)',
-    settingRefreshHigh: 'Fast (10s)',
+    settingRefreshDesc: 'How often data refreshes on screen',
+    settingRefreshLow: 'Manual',
+    settingRefreshMid: 'On open',
+    settingRefreshHigh: 'On open',
     settingThreshold: 'Alert Sensitivity',
-    settingThresholdDesc: 'Extensions with impact at or above this level show an alert badge',
+    settingThresholdDesc: 'Extensions scoring at or above this value are flagged',
     settingIgnoreList: 'Hidden Extensions',
     settingIgnoreDesc: 'These extensions are excluded from all views',
     settingRetention: 'Data Retention',
-    settingRetentionDesc: 'How long monitoring data is kept before auto-cleanup',
-    settingExport: 'Export Data',
-    settingExportDesc: 'Download all current monitoring data as a JSON file',
+    settingRetentionDesc: 'Not applicable — all analysis is real-time from manifest data',
+    settingExport: 'Export Audit Report',
+    settingExportDesc: 'Download the current audit data as JSON',
     btnExport: 'Download JSON',
 
-    // Popup
-    topImpact: 'Highest Impact',
-    openPanel: 'Open Full Dashboard',
-    collecting: 'Monitoring extensions — CPU & memory data refreshes every 30s',
-    debuggerNote: 'A brief "debugging" banner may flash as we sample each extension',
+    topImpact: 'Highest Risk',
+    openPanel: 'Open Full Audit',
+    collecting: 'Reading extension manifests...',
 
-    // Retention options
-    retention1h: '1 hour',
-    retention6h: '6 hours',
-    retention24h: '24 hours',
+    retention1h: '—',
+    retention6h: '—',
+    retention24h: '—',
 
-    kpiCpu: 'CPU',
-    kpiMemory: 'MEM',
-    nativeConnected: 'Measured — native host connected',
-    nativeNotConnected: 'Install native host for precise data',
-    estimateMode: '~Estimated from network, permissions & tab coverage',
-    copyInstallCmd: 'Copy Install Command',
-    copied: 'Copied!',
-    pasteInTerminal: 'Paste in Terminal, then restart Chrome',
+    aboutTitle: 'How This Works',
+    aboutBody: `<p>This tool audits your extensions using <strong>static analysis only</strong> — it reads each extension's declared permissions and content script patterns from their manifest.</p>
+<p style="margin-top:6px"><strong>Risk Score (0–100)</strong> is computed from two factors:</p>
+<ul style="margin:6px 0 6px 16px">
+<li><strong>Permission sensitivity (60%)</strong> — sensitive permissions like <code>&lt;all_urls&gt;</code>, <code>cookies</code>, <code>history</code>, <code>webRequest</code> are weighted 2×; others 0.5×</li>
+<li><strong>Content script scope (40%)</strong> — extensions that inject into all websites score highest; narrow patterns score lower; none scores 0</li>
+</ul>
+<p style="margin-top:6px">Scores are <strong>deterministic</strong> — they only change when an extension updates its permissions. No estimation, no sampling, no guesswork.</p>
+<p style="margin-top:6px;color:var(--fg-dim)">Chrome does not expose per-extension CPU or memory to other extensions. This tool provides the most reliable analysis possible within Chrome's security model.</p>`,
   },
   zh: {
-    appName: '扩展性能监控',
+    appName: '扩展审计',
 
-    statusHealthy: '状态：一切正常',
-    statusWarning: '状态：部分扩展需要关注',
-    statusCritical: '状态：检测到多个高影响扩展',
+    statusHealthy: '所有扩展看起来正常',
+    statusWarning: '部分扩展权限较广',
+    statusCritical: '检测到多个高风险扩展',
 
     kpiActive: '已启用',
-    kpiRequests: '请求数',
-    kpiTraffic: '流量',
+    kpiHighRisk: '高风险',
+    kpiMedRisk: '中等',
     kpiWarnings: '警告',
 
-    tabOverview: '总览',
-    tabDetails: '详情',
-    tabSettings: '设置',
+    scoreLabel: '风险',
+    scoreLow: '低风险',
+    scoreMedium: '中风险',
+    scoreHigh: '高风险',
+    scoreTooltip: '风险评分 = 权限敏感度 (60%) + 内容脚本范围 (40%)',
 
-    networkActivity: '网络活动（近 30 分钟）',
-    consumptionByExt: '各扩展流量占比',
-    noTraffic: '暂无流量记录 — 浏览几个网页后再来看看',
-
-    scoreLabel: '影响度',
-    scoreLow: '影响较低',
-    scoreMedium: '影响中等',
-    scoreHigh: '影响较高',
-    scoreTooltip: '影响度评分：权限广度 + 网络活动 + 内容脚本注入范围',
-
+    consumptionByExt: '扩展风险排名',
     searchPlaceholder: '搜索扩展...',
-    sortScore: '影响度',
-    sortTraffic: '流量',
-    sortRequests: '请求数',
-    detailRequests: '发送请求数',
-    detailTraffic: '传输数据量',
-    detailContentScripts: '注入页面',
+    sortScore: '风险',
+    sortPerms: '权限数',
+    detailSensitivePerms: '敏感权限数',
+    detailContentScripts: '内容脚本范围',
     detailAllSites: '所有网站',
     detailPatterns: '个匹配规则',
     detailNone: '无',
-    sectionPermissions: '权限列表',
-    sectionTopDomains: '请求最多的域名',
+    sectionPermissions: '全部权限',
     btnDisable: '禁用此扩展',
     btnDisabled: '已禁用',
     btnConfirm: '再点一次确认',
     noExtensions: '未找到扩展',
 
-    settingRefreshRate: '面板刷新速度',
-    settingRefreshDesc: '数据在屏幕上的更新频率',
-    settingRefreshLow: '慢 (60秒)',
-    settingRefreshMid: '正常 (30秒)',
-    settingRefreshHigh: '快 (10秒)',
+    settingRefreshRate: '刷新方式',
+    settingRefreshDesc: '数据刷新时机',
+    settingRefreshLow: '手动',
+    settingRefreshMid: '打开时',
+    settingRefreshHigh: '打开时',
     settingThreshold: '警告灵敏度',
-    settingThresholdDesc: '影响度达到此阈值的扩展会显示警告标记',
+    settingThresholdDesc: '风险评分达到此阈值的扩展会被标记',
     settingIgnoreList: '隐藏的扩展',
     settingIgnoreDesc: '这些扩展不会出现在任何视图中',
-    settingRetention: '数据保留时间',
-    settingRetentionDesc: '监控数据在自动清理前保留多久',
-    settingExport: '导出数据',
-    settingExportDesc: '将当前所有监控数据下载为 JSON 文件',
+    settingRetention: '数据保留',
+    settingRetentionDesc: '不适用 — 所有分析均为实时读取 manifest 数据',
+    settingExport: '导出审计报告',
+    settingExportDesc: '将当前审计数据下载为 JSON',
     btnExport: '下载 JSON',
 
-    topImpact: '影响度最高',
-    openPanel: '打开完整面板',
-    collecting: '正在监控扩展 — CPU 和内存数据每 30 秒刷新',
-    debuggerNote: '采样时浏览器顶部会短暂闪现调试横幅',
+    topImpact: '风险最高',
+    openPanel: '打开完整审计',
+    collecting: '正在读取扩展信息...',
 
-    retention1h: '1 小时',
-    retention6h: '6 小时',
-    retention24h: '24 小时',
+    retention1h: '—',
+    retention6h: '—',
+    retention24h: '—',
 
-    kpiCpu: 'CPU',
-    kpiMemory: '内存',
-    nativeConnected: '精确模式 — 本地采集器已连接',
-    nativeNotConnected: '安装本地采集器以获取精确数据',
-    estimateMode: '~基于网络活动、权限和 Tab 覆盖率估算',
-    copyInstallCmd: '复制安装命令',
-    copied: '已复制！',
-    pasteInTerminal: '粘贴到终端执行，然后重启 Chrome',
+    aboutTitle: '工作原理',
+    aboutBody: `<p>本工具通过<strong>静态分析</strong>审计你的扩展 — 读取每个扩展在 manifest 中声明的权限和内容脚本模式。</p>
+<p style="margin-top:6px"><strong>风险评分 (0–100)</strong> 由两个因素计算：</p>
+<ul style="margin:6px 0 6px 16px">
+<li><strong>权限敏感度 (60%)</strong> — <code>&lt;all_urls&gt;</code>、<code>cookies</code>、<code>history</code>、<code>webRequest</code> 等敏感权限权重 2×；其他 0.5×</li>
+<li><strong>内容脚本范围 (40%)</strong> — 注入所有网站的得分最高；窄匹配较低；无注入为 0</li>
+</ul>
+<p style="margin-top:6px">评分是<strong>确定性的</strong> — 只有扩展更新权限时才会变化。没有估算、没有采样、没有猜测。</p>
+<p style="margin-top:6px;color:var(--fg-dim)">Chrome 不允许扩展读取其他扩展的 CPU 或内存数据。本工具在 Chrome 安全模型允许范围内提供最可靠的分析。</p>`,
   },
 };
 

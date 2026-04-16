@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('header-title').textContent = t('appName');
   document.getElementById('lbl-active').textContent = t('kpiActive');
-  document.getElementById('lbl-traffic').textContent = t('kpiRequests');
+  document.getElementById('lbl-traffic').textContent = t('kpiHighRisk');
   document.getElementById('lbl-warnings').textContent = t('kpiWarnings');
   document.getElementById('section-top').textContent = t('topImpact');
   document.getElementById('btn-panel-text').textContent = t('openPanel');
@@ -19,25 +19,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadData() {
-  chrome.runtime.sendMessage({ type: 'GET_LIVE_SNAPSHOT' }, (response) => {
+  chrome.runtime.sendMessage({ type: 'GET_DATA' }, (response) => {
     if (!response) return;
     render(response);
   });
 }
 
-function render({ activity, extensions, settings, nativeConnected }) {
-  const extEntries = buildExtensionEntries(activity, extensions, settings);
-  const warningCount = extEntries.filter(e => e.score >= settings.alertThreshold).length;
+function render({ extensions, settings }) {
+  const entries = buildEntries(extensions, settings);
+  const activeCount = entries.filter(e => e.enabled).length;
+  const highRisk = entries.filter(e => e.score >= 70).length;
+  const warningCount = entries.filter(e => e.score >= settings.alertThreshold).length;
 
-  // Always show estimated/real memory — the estimator always provides data
-  let totalMem = 0;
-  for (const e of extEntries) { totalMem += e.rss || 0; }
-  const activeCount = Object.values(extensions).filter(e => e.enabled).length;
-  const prefix = nativeConnected ? '' : '~';
   document.getElementById('kpi-active').textContent = activeCount;
-  document.getElementById('kpi-traffic').textContent = prefix + formatBytes(totalMem);
-  document.getElementById('lbl-active').textContent = t('kpiActive');
-  document.getElementById('lbl-traffic').textContent = t('kpiMemory');
+  document.getElementById('kpi-traffic').textContent = highRisk;
   document.getElementById('kpi-warnings').textContent = warningCount;
 
   const dot = document.getElementById('status-dot');
@@ -53,7 +48,7 @@ function render({ activity, extensions, settings, nativeConnected }) {
     dot.setAttribute('aria-label', t('statusHealthy'));
   }
 
-  const top5 = extEntries.slice(0, 5);
+  const top5 = entries.slice(0, 5);
   const listEl = document.getElementById('top-list');
 
   if (top5.length === 0) {
@@ -67,7 +62,7 @@ function render({ activity, extensions, settings, nativeConnected }) {
     const barWidth = Math.round((entry.score / maxScore) * 100);
     const color = getScoreColor(entry.score);
     return `
-      <div class="top-item" data-ext-id="${entry.id}">
+      <div class="top-item">
         <span class="top-item-name">${escapeHtml(entry.name)}</span>
         <div class="top-item-bar-wrap">
           <div class="top-item-bar" style="width:${barWidth}%;background:${color}"></div>
@@ -77,18 +72,12 @@ function render({ activity, extensions, settings, nativeConnected }) {
   }).join('');
 }
 
-function buildExtensionEntries(activity, extensions, settings) {
+function buildEntries(extensions, settings) {
   const ignoreList = settings?.ignoreList || [];
   const entries = [];
   for (const [extId, ext] of Object.entries(extensions)) {
     if (ignoreList.includes(extId)) continue;
-    const act = activity[extId];
-    const totalRequests = act ? act.buckets.reduce((s, b) => s + b.requests, 0) : 0;
-    const totalBytes = act ? act.buckets.reduce((s, b) => s + b.bytesTransferred, 0) : 0;
-    const score = act?.score || 0;
-    const cpu = act?.cpu || 0;
-    const rss = act?.rss || 0;
-    entries.push({ id: extId, name: ext.name, version: ext.version, enabled: ext.enabled, totalRequests, totalBytes, score, cpu, rss });
+    entries.push({ id: extId, ...ext });
   }
   entries.sort((a, b) => b.score - a.score);
   return entries;

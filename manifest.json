@@ -1,18 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Extension Perf Monitor",
-  "version": "1.0.0",
-  "description": "Monitor all Chrome extensions' resource usage, network activity, and impact scores.",
+  "name": "Extension Audit",
+  "version": "2.0.0",
+  "description": "Audit Chrome extensions by permissions, content script scope, and risk score. Know which ones deserve to stay.",
   "permissions": [
     "management",
     "storage",
-    "sidePanel",
-    "webRequest",
-    "alarms",
-    "nativeMessaging"
-  ],
-  "host_permissions": [
-    "<all_urls>"
+    "sidePanel"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js"

@@ -1,5 +1,4 @@
 let currentData = null;
-let refreshTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('panel-title').textContent = t('appName');
@@ -13,34 +12,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   loadData();
-  startPolling();
 });
 
 function loadData() {
-  chrome.runtime.sendMessage({ type: 'GET_LIVE_SNAPSHOT' }, (response) => {
+  chrome.runtime.sendMessage({ type: 'GET_DATA' }, (response) => {
     if (!response) return;
     currentData = response;
-    updateStatusDot(response);
     renderAll();
   });
-}
-
-function startPolling() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  const interval = currentData?.settings?.refreshInterval || 30;
-  refreshTimer = setInterval(loadData, interval * 1000);
 }
 
 function renderAll() {
   if (!currentData) return;
   const container = document.getElementById('panel-content');
-  const entries = buildSortedEntries(currentData.activity, currentData.extensions);
+  const entries = buildSortedEntries(currentData.extensions);
 
-  // Flat layout: KPIs → CPU chart → Resource bars → Extension list
   container.innerHTML = `
-    <div class="native-status ${currentData.nativeConnected ? 'connected' : ''}">${
-      escapeHtml(currentData.nativeConnected ? t('nativeConnected') : t('estimateMode'))
-    }</div>
     ${renderOverviewSection(currentData)}
 
     <div class="section-divider"></div>
@@ -48,15 +35,20 @@ function renderAll() {
     <div class="toolbar">
       <input id="search-ext" class="search-input" type="text" placeholder="${escapeAttr(t('searchPlaceholder'))}" value="${escapeAttr(currentSearch)}">
       <button class="sort-btn ${currentSort === 'score' ? 'active' : ''}" data-sort="score">${escapeHtml(t('sortScore'))}</button>
-      <button class="sort-btn ${currentSort === 'traffic' ? 'active' : ''}" data-sort="traffic">MEM</button>
+      <button class="sort-btn ${currentSort === 'perms' ? 'active' : ''}" data-sort="perms">${escapeHtml(t('sortPerms'))}</button>
     </div>
     <div id="details-list"></div>
+
+    <div class="section-divider"></div>
+
+    <div class="about-section">
+      <div class="section-title">${escapeHtml(t('aboutTitle'))}</div>
+      <div class="about-text">${t('aboutBody')}</div>
+    </div>
   `;
 
-  renderActivityChart(currentData.activity);
   renderConsumptionBars(entries);
 
-  // Wire search + sort
   document.getElementById('search-ext').addEventListener('input', (e) => {
     currentSearch = e.target.value;
     renderDetailsList(entries, currentData.settings);
@@ -72,28 +64,10 @@ function renderAll() {
   });
 
   renderDetailsList(entries, currentData.settings);
-
-}
-
-function updateStatusDot(data) {
-  const threshold = data.settings.alertThreshold;
-  const warningCount = Object.values(data.activity).filter(a => (a.score || 0) >= threshold).length;
-  const dot = document.getElementById('status-dot');
-  dot.className = 'status-dot';
-  if (warningCount > 3) {
-    dot.classList.add('status-red');
-    dot.setAttribute('aria-label', t('statusCritical'));
-  } else if (warningCount > 0) {
-    dot.classList.add('status-yellow');
-    dot.setAttribute('aria-label', t('statusWarning'));
-  } else {
-    dot.classList.add('status-green');
-    dot.setAttribute('aria-label', t('statusHealthy'));
-  }
 }
 
 function onSettingsChanged(newSettings) {
   currentData.settings = newSettings;
   chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: newSettings });
-  startPolling();
+  renderAll();
 }
