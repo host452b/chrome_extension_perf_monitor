@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Apply i18n to static elements
   document.getElementById('header-title').textContent = t('appName');
-  document.getElementById('lbl-active').textContent = 'CPU';
-  document.getElementById('lbl-traffic').textContent = 'MEM';
+  document.getElementById('lbl-active').textContent = t('kpiActive');
+  document.getElementById('lbl-traffic').textContent = t('kpiRequests');
   document.getElementById('lbl-warnings').textContent = t('kpiWarnings');
   document.getElementById('section-top').textContent = t('topImpact');
   document.getElementById('btn-panel-text').textContent = t('openPanel');
@@ -12,14 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const win = await chrome.windows.getCurrent();
       await chrome.sidePanel.open({ windowId: win.id });
-      window.close(); // close popup after opening panel
+      window.close();
     } catch (e) {
       console.error('[PerfMon] Failed to open side panel:', e);
     }
   });
 });
 
-async function loadData() {
+function loadData() {
   chrome.runtime.sendMessage({ type: 'GET_LIVE_SNAPSHOT' }, (response) => {
     if (!response) return;
     render(response);
@@ -29,15 +28,12 @@ async function loadData() {
 function render({ activity, extensions, settings }) {
   const extEntries = buildExtensionEntries(activity, extensions, settings);
 
-  let totalCpu = 0, totalMemory = 0;
-  for (const e of extEntries) {
-    totalCpu += e.cpu || 0;
-    totalMemory += e.memory || 0;
-  }
+  const activeCount = Object.values(extensions).filter(e => e.enabled).length;
+  const totalRequests = extEntries.reduce((s, e) => s + e.totalRequests, 0);
   const warningCount = extEntries.filter(e => e.score >= settings.alertThreshold).length;
 
-  document.getElementById('kpi-active').textContent = totalCpu.toFixed(1) + '%';
-  document.getElementById('kpi-traffic').textContent = formatBytes(totalMemory);
+  document.getElementById('kpi-active').textContent = activeCount;
+  document.getElementById('kpi-traffic').textContent = formatNumber(totalRequests);
   document.getElementById('kpi-warnings').textContent = warningCount;
 
   const dot = document.getElementById('status-dot');
@@ -62,7 +58,6 @@ function render({ activity, extensions, settings }) {
   }
 
   const maxScore = Math.max(...top5.map(e => e.score), 1);
-  // Column header row showing what the number means
   const headerRow = `<div class="top-item-header"><span></span><span class="top-item-header-label">${escapeHtml(t('scoreLabel'))}</span></div>`;
   listEl.innerHTML = headerRow + top5.map(entry => {
     const barWidth = Math.round((entry.score / maxScore) * 100);
@@ -87,18 +82,10 @@ function buildExtensionEntries(activity, extensions, settings) {
     const totalRequests = act ? act.buckets.reduce((s, b) => s + b.requests, 0) : 0;
     const totalBytes = act ? act.buckets.reduce((s, b) => s + b.bytesTransferred, 0) : 0;
     const score = act?.score || 0;
-    const cpu = act?.cpu || 0;
-    const memory = act?.memory || 0;
-    entries.push({ id: extId, name: ext.name, version: ext.version, enabled: ext.enabled, icons: ext.icons, totalRequests, totalBytes, score, cpu, memory });
+    entries.push({ id: extId, name: ext.name, version: ext.version, enabled: ext.enabled, totalRequests, totalBytes, score });
   }
   entries.sort((a, b) => b.score - a.score);
   return entries;
-}
-
-function getIconUrl(icons) {
-  if (!icons || icons.length === 0) return '';
-  const icon = icons.find(i => i.size >= 32) || icons[icons.length - 1];
-  return icon.url || '';
 }
 
 function escapeAttr(str) {

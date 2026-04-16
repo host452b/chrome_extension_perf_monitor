@@ -32,7 +32,7 @@ const _strings = {
     scoreLow: 'Low Impact',
     scoreMedium: 'Moderate Impact',
     scoreHigh: 'High Impact',
-    scoreTooltip: 'Impact Score: higher = more CPU/memory use + broader permissions',
+    scoreTooltip: 'Impact Score: permissions breadth + network activity + content script scope',
 
     // Details
     searchPlaceholder: 'Search extensions...',
@@ -103,7 +103,7 @@ const _strings = {
     scoreLow: '影响较低',
     scoreMedium: '影响中等',
     scoreHigh: '影响较高',
-    scoreTooltip: '影响度评分：越高 = CPU/内存占用越多 + 权限越广',
+    scoreTooltip: '影响度评分：权限广度 + 网络活动 + 内容脚本注入范围',
 
     searchPlaceholder: '搜索扩展...',
     sortScore: '影响度',

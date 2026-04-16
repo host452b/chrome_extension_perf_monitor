@@ -55,18 +55,6 @@ function renderDetailsList(entries, settings) {
         </div>
         <div class="ext-card-body">
           <div class="ext-detail-row">
-            <span class="ext-detail-label">CPU</span>
-            <span class="ext-detail-value">${(entry.cpu || 0).toFixed(1)}%</span>
-          </div>
-          <div class="ext-detail-row">
-            <span class="ext-detail-label">Memory</span>
-            <span class="ext-detail-value">${formatBytes(entry.memory || 0)}</span>
-          </div>
-          <div class="ext-detail-row">
-            <span class="ext-detail-label">JS Heap</span>
-            <span class="ext-detail-value">${formatBytes(entry.jsMemory || 0)}</span>
-          </div>
-          <div class="ext-detail-row">
             <span class="ext-detail-label">${escapeHtml(t('detailRequests'))}</span>
             <span class="ext-detail-value">${formatNumber(entry.totalRequests)}</span>
           </div>
