@@ -81,7 +81,7 @@ function renderDetailsList(entries, settings) {
 
     return `
       <div class="ext-card" data-ext-id="${entry.id}">
-        <div class="ext-card-header" onclick="toggleCard(this)">
+        <div class="ext-card-header" tabindex="0" role="button" aria-expanded="false" onclick="toggleCard(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCard(this)}">
           <img class="ext-icon" src="${iconUrl}" alt="" width="24" height="24">
           <span class="ext-name">${escapeHtml(entry.name)}</span>
           <span class="ext-version">${escapeHtml(entry.version)}</span>
@@ -117,7 +117,9 @@ function renderDetailsList(entries, settings) {
 }
 
 function toggleCard(headerEl) {
-  headerEl.closest('.ext-card').classList.toggle('expanded');
+  const card = headerEl.closest('.ext-card');
+  const isExpanded = card.classList.toggle('expanded');
+  headerEl.setAttribute('aria-expanded', isExpanded);
 }
 
 function handleDisable(event, extId) {

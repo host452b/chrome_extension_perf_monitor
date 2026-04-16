@@ -101,7 +101,7 @@ function renderAreaChart(activity) {
           grid: { color: '#1E293B' },
         },
       },
-      animation: { duration: 300 },
+      animation: { duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300 },
     },
   });
 }

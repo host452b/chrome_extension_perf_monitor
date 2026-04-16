@@ -48,9 +48,16 @@ function updateStatusDot(data) {
   const warningCount = Object.values(data.activity).filter(a => (a.score || 0) >= threshold).length;
   const dot = document.getElementById('status-dot');
   dot.className = 'status-dot';
-  if (warningCount > 3) dot.classList.add('status-red');
-  else if (warningCount > 0) dot.classList.add('status-yellow');
-  else dot.classList.add('status-green');
+  if (warningCount > 3) {
+    dot.classList.add('status-red');
+    dot.setAttribute('aria-label', 'Status: critical');
+  } else if (warningCount > 0) {
+    dot.classList.add('status-yellow');
+    dot.setAttribute('aria-label', 'Status: warning');
+  } else {
+    dot.classList.add('status-green');
+    dot.setAttribute('aria-label', 'Status: healthy');
+  }
 }
 
 function onSettingsChanged(newSettings) {

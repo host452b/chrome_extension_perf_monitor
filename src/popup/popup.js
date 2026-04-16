@@ -25,9 +25,16 @@ function render({ activity, extensions, settings }) {
 
   const dot = document.getElementById('status-dot');
   dot.className = 'status-dot';
-  if (warningCount > 3) dot.classList.add('status-red');
-  else if (warningCount > 0) dot.classList.add('status-yellow');
-  else dot.classList.add('status-green');
+  if (warningCount > 3) {
+    dot.classList.add('status-red');
+    dot.setAttribute('aria-label', 'Status: critical');
+  } else if (warningCount > 0) {
+    dot.classList.add('status-yellow');
+    dot.setAttribute('aria-label', 'Status: warning');
+  } else {
+    dot.classList.add('status-green');
+    dot.setAttribute('aria-label', 'Status: healthy');
+  }
 
   const top5 = extEntries.slice(0, 5);
   const listEl = document.getElementById('top-list');
@@ -49,7 +56,7 @@ function render({ activity, extensions, settings }) {
         <div class="top-item-bar-wrap">
           <div class="top-item-bar" style="width:${barWidth}%;background:${color}"></div>
         </div>
-        <span class="top-item-score" style="color:${color}">${entry.score}</span>
+        <span class="top-item-score" style="color:${color}" title="${getScoreLabel(entry.score)} impact">${entry.score}</span>
       </div>`;
   }).join('');
 }
