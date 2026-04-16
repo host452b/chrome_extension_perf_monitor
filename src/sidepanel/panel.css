@@ -228,6 +228,33 @@ body {
 }
 .native-status.connected { color: var(--accent); }
 
+.native-setup {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px;
+  text-align: center;
+}
+.native-setup-text {
+  font-size: 10px; color: var(--fg-dim); margin-bottom: 8px; line-height: 1.4;
+}
+.native-setup-btn {
+  padding: 5px 14px; background: transparent; border: 1px solid var(--accent);
+  border-radius: var(--radius); color: var(--accent); font-family: var(--font-sans);
+  font-size: 10px; font-weight: 500; cursor: pointer; transition: background 0.12s;
+}
+.native-setup-btn:hover { background: #34D39910; }
+.native-setup-cmd {
+  margin-top: 8px; background: var(--bg); border-radius: 4px; padding: 8px;
+  text-align: left; overflow-x: auto;
+}
+.native-setup-cmd code {
+  font-family: var(--font-mono); font-size: 9px; color: var(--accent);
+  word-break: break-all; line-height: 1.5;
+}
+.native-setup-hint {
+  font-size: 9px; color: var(--fg-dim); margin-top: 6px; text-align: center;
+}
+.hidden { display: none; }
+
 /* Focus — subtle ring */
 *:focus-visible { outline: 1.5px solid var(--accent); outline-offset: 1px; }
 .search-input:focus-visible { outline: none; border-color: var(--accent); }
