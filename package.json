@@ -2,6 +2,9 @@
   "name": "extension-perf-monitor",
   "private": true,
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "canvas": "^3.2.3"
   }
 }
