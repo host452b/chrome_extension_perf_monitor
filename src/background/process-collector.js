@@ -1,88 +1,146 @@
 /**
- * ProcessCollector — polls chrome.processes API for per-extension CPU & memory.
+ * ProcessCollector — uses chrome.debugger API to get per-extension memory/performance.
  *
- * chrome.processes.getProcessInfo() returns per-process data:
- *   - cpu: CPU usage (percentage of one core, 0-100+)
- *   - privateMemory: private memory in bytes
- *   - jsMemoryAllocated / jsMemoryUsed: JS heap bytes
+ * Flow:
+ * 1. chrome.debugger.getTargets() → find all extension service_worker / background_page targets
+ * 2. For each target: attach → Runtime.getHeapUsage → Performance.getMetrics → detach
+ * 3. Collect jsHeapUsed, jsHeapTotal, TaskDuration (proxy for CPU)
  *
- * Extension processes have type "extension" with title matching the extension name.
- * We match process titles to extension names from chrome.management.
+ * The debugger banner appears while attached but we attach/detach quickly per poll.
  */
 class ProcessCollector {
   constructor(ownExtensionId) {
     this._ownId = ownExtensionId;
-    this._latest = {};       // { extId: { cpu, memory, jsMemory, pid } }
-    this._history = {};      // { extId: [ { ts, cpu, memory } ] }  — rolling window
-    this._nameToId = {};     // { "Extension Name": extId }
-    this._maxHistory = 60;   // keep last 60 samples (~30 min at 30s interval)
-    this._available = typeof chrome !== 'undefined' && !!chrome.processes;
+    this._latest = {};       // { extId: { jsHeapUsed, jsHeapTotal, taskDuration, memory } }
+    this._history = {};      // { extId: [ { ts, memory, cpu } ] }
+    this._prevTaskDuration = {}; // for computing CPU delta
+    this._maxHistory = 60;
+    this._available = typeof chrome !== 'undefined' && !!chrome.debugger;
   }
 
   get isAvailable() {
     return this._available;
   }
 
-  /** Update the name→id map from management data */
-  setExtensionMap(extensions) {
-    this._nameToId = {};
-    for (const [id, ext] of Object.entries(extensions)) {
-      if (id === this._ownId) continue;
-      this._nameToId[ext.name] = id;
-    }
+  setExtensionMap() {
+    // No-op: we discover extensions directly from debugger targets
   }
 
-  /** Poll chrome.processes and update latest + history */
   async poll() {
     if (!this._available) return;
 
     try {
-      const processes = await chrome.processes.getProcessInfo([], true);
-      const now = Date.now();
-      const seen = new Set();
-
-      for (const proc of Object.values(processes)) {
-        if (proc.type !== 'extension') continue;
-
-        // Match process title to extension name
-        const extId = this._nameToId[proc.title];
-        if (!extId) continue;
-
-        seen.add(extId);
-        this._latest[extId] = {
-          cpu: proc.cpu || 0,
-          memory: proc.privateMemory || 0,
-          jsMemory: proc.jsMemoryUsed || 0,
-          pid: proc.osProcessId || 0,
-        };
-
-        // Append to history
-        if (!this._history[extId]) this._history[extId] = [];
-        this._history[extId].push({
-          ts: now,
-          cpu: proc.cpu || 0,
-          memory: proc.privateMemory || 0,
+      const targets = await new Promise((resolve, reject) => {
+        chrome.debugger.getTargets((t) => {
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+          else resolve(t);
         });
+      });
 
-        // Trim history
-        if (this._history[extId].length > this._maxHistory) {
-          this._history[extId] = this._history[extId].slice(-this._maxHistory);
-        }
+      const now = Date.now();
+      const extTargets = targets.filter(t =>
+        t.extensionId &&
+        t.extensionId !== this._ownId &&
+        (t.type === 'service_worker' || t.type === 'background_page' || t.type === 'worker')
+      );
+
+      // Deduplicate by extensionId (pick the first/main target)
+      const byExtId = {};
+      for (const t of extTargets) {
+        if (!byExtId[t.extensionId]) byExtId[t.extensionId] = t;
       }
 
-      // Extensions not seen in processes get 0
-      for (const extId of Object.keys(this._nameToId)) {
-        if (!seen.has(this._nameToId[extId]) && this._latest[this._nameToId[extId]]) {
-          // Keep last known value but mark cpu as 0
+      for (const [extId, target] of Object.entries(byExtId)) {
+        try {
+          const data = await this._probeTarget(target, extId);
+          if (data) {
+            // Calculate CPU-like metric from TaskDuration delta
+            const prevDuration = this._prevTaskDuration[extId] || 0;
+            const cpuDelta = data.taskDuration > prevDuration
+              ? (data.taskDuration - prevDuration) * 100 // rough: seconds → percentage-ish over poll interval
+              : 0;
+            this._prevTaskDuration[extId] = data.taskDuration;
+
+            this._latest[extId] = {
+              memory: data.jsHeapUsed,
+              jsHeapUsed: data.jsHeapUsed,
+              jsHeapTotal: data.jsHeapTotal,
+              cpu: Math.min(cpuDelta, 100), // cap at 100
+              taskDuration: data.taskDuration,
+            };
+
+            if (!this._history[extId]) this._history[extId] = [];
+            this._history[extId].push({
+              ts: now,
+              memory: data.jsHeapUsed,
+              cpu: Math.min(cpuDelta, 100),
+            });
+            if (this._history[extId].length > this._maxHistory) {
+              this._history[extId] = this._history[extId].slice(-this._maxHistory);
+            }
+          }
+        } catch (e) {
+          // Skip this extension silently — might be suspended or restricted
         }
       }
     } catch (e) {
-      console.error('[PerfMon] Process poll failed:', e);
-      this._available = false;
+      console.warn('[PerfMon] Debugger poll failed:', e.message);
     }
   }
 
-  /** Get latest snapshot: { extId: { cpu, memory, jsMemory, pid } } */
+  async _probeTarget(target, extId) {
+    const debuggee = target.tabId
+      ? { tabId: target.tabId }
+      : { targetId: target.id };
+
+    // Attach
+    await new Promise((resolve, reject) => {
+      chrome.debugger.attach(debuggee, '1.3', () => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve();
+      });
+    });
+
+    try {
+      // Get heap usage
+      const heap = await new Promise((resolve, reject) => {
+        chrome.debugger.sendCommand(debuggee, 'Runtime.getHeapUsage', {}, (result) => {
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+          else resolve(result);
+        });
+      });
+
+      // Get performance metrics (TaskDuration = cumulative CPU seconds)
+      let taskDuration = 0;
+      try {
+        const metrics = await new Promise((resolve, reject) => {
+          chrome.debugger.sendCommand(debuggee, 'Performance.enable', {}, () => {
+            chrome.debugger.sendCommand(debuggee, 'Performance.getMetrics', {}, (result) => {
+              if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+              else resolve(result);
+            });
+          });
+        });
+        const td = metrics.metrics?.find(m => m.name === 'TaskDuration');
+        if (td) taskDuration = td.value;
+      } catch {
+        // Performance.getMetrics not available for this target type
+      }
+
+      return {
+        jsHeapUsed: heap.usedSize || 0,
+        jsHeapTotal: heap.totalSize || 0,
+        taskDuration,
+      };
+    } finally {
+      // Always detach
+      chrome.debugger.detach(debuggee, () => {
+        // Ignore detach errors
+        void chrome.runtime.lastError;
+      });
+    }
+  }
+
   getLatest() {
     const result = {};
     for (const [extId, data] of Object.entries(this._latest)) {
@@ -91,12 +149,10 @@ class ProcessCollector {
     return result;
   }
 
-  /** Get history for a specific extension */
   getHistory(extId) {
     return (this._history[extId] || []).slice();
   }
 
-  /** Get all history */
   getAllHistory() {
     const result = {};
     for (const [extId, arr] of Object.entries(this._history)) {
