@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="panel.css">
+  <title>Extension Perf Monitor</title>
+</head>
+<body>
+  <div class="panel">
+    <header class="panel-header">
+      <div class="header-left">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <h1 class="header-title">Perf Monitor</h1>
+      </div>
+      <span id="status-dot" class="status-dot status-green"></span>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="details">Details</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </nav>
+
+    <main class="tab-content">
+      <section id="tab-overview" class="tab-pane active"></section>
+      <section id="tab-details" class="tab-pane"></section>
+      <section id="tab-settings" class="tab-pane"></section>
+    </main>
+  </div>
+
+  <script src="../../lib/chart.min.js"></script>
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="overview.js"></script>
+  <script src="details.js"></script>
+  <script src="settings.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>
