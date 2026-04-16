@@ -50,4 +50,26 @@ describe('calculateScore', () => {
     const score = calculateScore(meta, { totalRequests: 0, totalBytes: 0 });
     assert.ok(score > 0, `Permissions-only score should be > 0, got ${score}`);
   });
+
+  it('score with process data is higher than without', () => {
+    const meta = { permissions: ['storage'], contentScriptPatterns: [] };
+    const activity = { totalRequests: 100, totalBytes: 10000 };
+    const without = calculateScore(meta, activity);
+    const withProc = calculateScore(meta, activity, { cpu: 10, rss: 80 * 1024 * 1024 });
+    assert.ok(withProc > without, `${withProc} should > ${without}`);
+  });
+
+  it('high CPU produces high score even with few permissions', () => {
+    const meta = { permissions: [], contentScriptPatterns: [] };
+    const activity = { totalRequests: 0, totalBytes: 0 };
+    const score = calculateScore(meta, activity, { cpu: 25, rss: 200 * 1024 * 1024 });
+    assert.ok(score >= 40, `CPU-heavy score ${score} should >= 40`);
+  });
+
+  it('without process data falls back to permission-based scoring', () => {
+    const meta = { permissions: ['<all_urls>', 'tabs', 'cookies'], contentScriptPatterns: ['<all_urls>'] };
+    const activity = { totalRequests: 0, totalBytes: 0 };
+    const score = calculateScore(meta, activity);
+    assert.ok(score > 0, `Permissions-only score should be > 0, got ${score}`);
+  });
 });

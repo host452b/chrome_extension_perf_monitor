@@ -4,10 +4,14 @@ importScripts(
   '../shared/storage.js',
   './collector.js',
   './aggregator.js',
-  './scorer.js'
+  './scorer.js',
+  './native-bridge.js'
 );
 
 const collector = new Collector(chrome.runtime.id);
+
+const nativeBridge = new NativeBridge();
+nativeBridge.connect();
 
 // --- Network request listener ---
 chrome.webRequest.onCompleted.addListener(
@@ -19,8 +23,12 @@ chrome.webRequest.onCompleted.addListener(
 // --- Periodic aggregation ---
 chrome.alarms.create('aggregate', { periodInMinutes: 15 });
 chrome.alarms.create('mini-flush', { periodInMinutes: 2 });
+chrome.alarms.create('sample-native', { periodInMinutes: 0.5 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'sample-native') {
+    nativeBridge.requestSample();
+  }
   if (alarm.name === 'aggregate' || alarm.name === 'mini-flush') {
     await flushAndPrune();
   }
@@ -109,21 +117,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
         }
 
+        // Get process data from native host (may be empty if not installed)
+        const processData = nativeBridge.getLatest();
+
         // Calculate scores for ALL extensions
         for (const [extId, meta] of Object.entries(stored.extensions)) {
           if (!activity[extId]) activity[extId] = { buckets: [], score: 0 };
           const totalRequests = activity[extId].buckets.reduce((s, b) => s + b.requests, 0);
           const totalBytes = activity[extId].buckets.reduce((s, b) => s + b.bytesTransferred, 0);
+          const proc = processData[extId] || null;
           activity[extId].score = calculateScore(
             { permissions: meta.permissions || [], contentScriptPatterns: meta.contentScriptPatterns || [] },
-            { totalRequests, totalBytes }
+            { totalRequests, totalBytes },
+            proc
           );
+          if (proc) {
+            activity[extId].cpu = proc.cpu;
+            activity[extId].rss = proc.rss;
+          }
         }
 
         sendResponse({
           activity,
           extensions: stored.extensions,
           settings: stored.settings,
+          nativeConnected: nativeBridge.isConnected(),
         });
       } catch (e) {
         console.error('[PerfMon] GET_LIVE_SNAPSHOT failed:', e);
