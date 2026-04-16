@@ -6,18 +6,18 @@ function renderOverview(data) {
 
   container.innerHTML = `
     <div class="kpi-row">
-      ${renderKpiCard('kpi-ov-active', countActiveExtensions(data.extensions), 'Active', null)}
-      ${renderKpiCard('kpi-ov-requests', sumField(entries, 'totalRequests'), 'Requests', 'number')}
-      ${renderKpiCard('kpi-ov-traffic', sumField(entries, 'totalBytes'), 'Traffic', 'bytes')}
-      ${renderKpiCard('kpi-ov-warnings', countWarnings(entries, data.settings.alertThreshold), 'Warnings', null)}
+      ${renderKpiCard('kpi-ov-active', countActiveExtensions(data.extensions), t('kpiActive'), null)}
+      ${renderKpiCard('kpi-ov-requests', sumField(entries, 'totalRequests'), t('kpiRequests'), 'number')}
+      ${renderKpiCard('kpi-ov-traffic', sumField(entries, 'totalBytes'), t('kpiTraffic'), 'bytes')}
+      ${renderKpiCard('kpi-ov-warnings', countWarnings(entries, data.settings.alertThreshold), t('kpiWarnings'), null)}
     </div>
 
-    <div class="section-title">Network Activity (Last 30 min)</div>
+    <div class="section-title">${escapeHtml(t('networkActivity'))}</div>
     <div class="chart-container">
       <canvas id="area-chart" height="150"></canvas>
     </div>
 
-    <div class="section-title">Consumption by Extension</div>
+    <div class="section-title">${escapeHtml(t('consumptionByExt'))}</div>
     <div id="consumption-bars"></div>
   `;
 
@@ -32,7 +32,7 @@ function renderKpiCard(id, value, label, format) {
   return `
     <div class="kpi-card">
       <span id="${id}" class="kpi-value">${display}</span>
-      <span class="kpi-label">${label}</span>
+      <span class="kpi-label">${escapeHtml(label)}</span>
     </div>`;
 }
 
@@ -69,11 +69,11 @@ function renderAreaChart(activity) {
       datasets: [{
         data: dataPoints,
         borderColor: '#3B82F6',
-        backgroundColor: '#3B82F620',
+        backgroundColor: '#3B82F610',
         fill: true,
-        tension: 0.3,
+        tension: 0.4,
         pointRadius: 0,
-        borderWidth: 2,
+        borderWidth: 1.5,
       }],
     },
     options: {
@@ -83,7 +83,7 @@ function renderAreaChart(activity) {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#1E293B',
-          borderColor: '#475569',
+          borderColor: '#334155',
           borderWidth: 1,
           titleColor: '#F8FAFC',
           bodyColor: '#94A3B8',
@@ -92,13 +92,15 @@ function renderAreaChart(activity) {
       },
       scales: {
         x: {
-          ticks: { color: '#64748B', font: { size: 10 }, maxRotation: 0, maxTicksLimit: 6 },
-          grid: { color: '#1E293B' },
+          ticks: { color: '#475569', font: { size: 10 }, maxRotation: 0, maxTicksLimit: 6 },
+          grid: { color: '#1E293B40' },
+          border: { display: false },
         },
         y: {
           beginAtZero: true,
-          ticks: { color: '#64748B', font: { size: 10 } },
-          grid: { color: '#1E293B' },
+          ticks: { color: '#475569', font: { size: 10 } },
+          grid: { color: '#1E293B40' },
+          border: { display: false },
         },
       },
       animation: { duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300 },
@@ -112,7 +114,7 @@ function renderConsumptionBars(entries) {
 
   const totalBytes = entries.reduce((s, e) => s + e.totalBytes, 0);
   if (totalBytes === 0) {
-    container.innerHTML = '<div class="empty-state">No traffic recorded yet</div>';
+    container.innerHTML = `<div class="empty-state">${escapeHtml(t('noTraffic'))}</div>`;
     return;
   }
 
@@ -140,7 +142,7 @@ function buildSortedEntries(activity, extensions) {
     const totalBytes = act ? act.buckets.reduce((s, b) => s + b.bytesTransferred, 0) : 0;
     entries.push({
       id: extId, name: ext.name, version: ext.version, enabled: ext.enabled,
-      icons: ext.icons, permissions: ext.permissions || [], hostPermissions: ext.hostPermissions || [],
+      permissions: ext.permissions || [], hostPermissions: ext.hostPermissions || [],
       contentScriptPatterns: ext.contentScriptPatterns || [],
       totalRequests, totalBytes, score: act?.score || 0, buckets: act?.buckets || [],
     });
@@ -167,10 +169,6 @@ function escapeHtml(str) {
   return el.innerHTML;
 }
 
-function getIconUrl(icons) {
-  if (!icons || icons.length === 0) {
-    return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="%23334155" rx="4"/></svg>';
-  }
-  const icon = icons.find(i => i.size >= 32) || icons[icons.length - 1];
-  return icon.url;
+function escapeAttr(str) {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

@@ -13,15 +13,15 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
-        <h1 class="header-title">Perf Monitor</h1>
+        <h1 id="panel-title" class="header-title">Perf Monitor</h1>
       </div>
       <span id="status-dot" class="status-dot status-green" role="status" aria-label="Status: healthy"></span>
     </header>
 
     <nav class="tabs">
-      <button class="tab active" data-tab="overview">Overview</button>
-      <button class="tab" data-tab="details">Details</button>
-      <button class="tab" data-tab="settings">Settings</button>
+      <button class="tab active" data-tab="overview" id="tab-btn-overview">Overview</button>
+      <button class="tab" data-tab="details" id="tab-btn-details">Details</button>
+      <button class="tab" data-tab="settings" id="tab-btn-settings">Settings</button>
     </nav>
 
     <main class="tab-content">
@@ -35,6 +35,7 @@
   <script src="../shared/constants.js"></script>
   <script src="../shared/utils.js"></script>
   <script src="../shared/storage.js"></script>
+  <script src="../shared/i18n.js"></script>
   <script src="overview.js"></script>
   <script src="details.js"></script>
   <script src="settings.js"></script>

@@ -13,18 +13,18 @@ function renderSettings(settings) {
 
   container.innerHTML = `
     <div class="setting-group">
-      <div class="setting-label">Refresh Rate</div>
-      <div class="setting-description">How often the dashboard polls for new data</div>
+      <div class="setting-label">${escapeHtml(t('settingRefreshRate'))}</div>
+      <div class="setting-description">${escapeHtml(t('settingRefreshDesc'))}</div>
       <div class="radio-group" id="setting-refresh">
-        <div class="radio-option ${settings.refreshInterval === 60 ? 'selected' : ''}" data-value="60">Low (60s)</div>
-        <div class="radio-option ${settings.refreshInterval === 30 ? 'selected' : ''}" data-value="30">Mid (30s)</div>
-        <div class="radio-option ${settings.refreshInterval === 10 ? 'selected' : ''}" data-value="10">High (10s)</div>
+        <div class="radio-option ${settings.refreshInterval === 60 ? 'selected' : ''}" data-value="60">${escapeHtml(t('settingRefreshLow'))}</div>
+        <div class="radio-option ${settings.refreshInterval === 30 ? 'selected' : ''}" data-value="30">${escapeHtml(t('settingRefreshMid'))}</div>
+        <div class="radio-option ${settings.refreshInterval === 10 ? 'selected' : ''}" data-value="10">${escapeHtml(t('settingRefreshHigh'))}</div>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">Alert Threshold</div>
-      <div class="setting-description">Extensions scoring at or above this value are flagged as warnings</div>
+      <div class="setting-label">${escapeHtml(t('settingThreshold'))}</div>
+      <div class="setting-description">${escapeHtml(t('settingThresholdDesc'))}</div>
       <div class="slider-row">
         <input type="range" id="setting-threshold" min="10" max="100" step="5" value="${settings.alertThreshold}">
         <span class="slider-value" id="threshold-display">${settings.alertThreshold}</span>
@@ -32,31 +32,30 @@ function renderSettings(settings) {
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">Ignore List</div>
-      <div class="setting-description">Excluded extensions are hidden from all views</div>
+      <div class="setting-label">${escapeHtml(t('settingIgnoreList'))}</div>
+      <div class="setting-description">${escapeHtml(t('settingIgnoreDesc'))}</div>
       <div id="ignore-list" style="max-height:160px;overflow-y:auto;padding:4px 0">
-        ${ignoreHtml || '<span style="color:var(--fg-muted);font-size:12px">No other extensions installed</span>'}
+        ${ignoreHtml || `<span style="color:var(--fg-muted);font-size:12px">${escapeHtml(t('noExtensions'))}</span>`}
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">Data Retention</div>
-      <div class="setting-description">How long activity data is kept before auto-cleanup</div>
+      <div class="setting-label">${escapeHtml(t('settingRetention'))}</div>
+      <div class="setting-description">${escapeHtml(t('settingRetentionDesc'))}</div>
       <div class="radio-group" id="setting-retention">
-        <div class="radio-option ${settings.retentionHours === 1 ? 'selected' : ''}" data-value="1">1 hour</div>
-        <div class="radio-option ${settings.retentionHours === 6 ? 'selected' : ''}" data-value="6">6 hours</div>
-        <div class="radio-option ${settings.retentionHours === 24 ? 'selected' : ''}" data-value="24">24 hours</div>
+        <div class="radio-option ${settings.retentionHours === 1 ? 'selected' : ''}" data-value="1">${escapeHtml(t('retention1h'))}</div>
+        <div class="radio-option ${settings.retentionHours === 6 ? 'selected' : ''}" data-value="6">${escapeHtml(t('retention6h'))}</div>
+        <div class="radio-option ${settings.retentionHours === 24 ? 'selected' : ''}" data-value="24">${escapeHtml(t('retention24h'))}</div>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">Export Data</div>
-      <div class="setting-description">Download current monitoring data as JSON</div>
-      <button class="btn-export" id="btn-export">Export JSON</button>
+      <div class="setting-label">${escapeHtml(t('settingExport'))}</div>
+      <div class="setting-description">${escapeHtml(t('settingExportDesc'))}</div>
+      <button class="btn-export" id="btn-export">${escapeHtml(t('btnExport'))}</button>
     </div>
   `;
 
-  // Refresh rate radio
   container.querySelectorAll('#setting-refresh .radio-option').forEach(opt => {
     opt.addEventListener('click', () => {
       container.querySelectorAll('#setting-refresh .radio-option').forEach(o => o.classList.remove('selected'));
@@ -65,7 +64,6 @@ function renderSettings(settings) {
     });
   });
 
-  // Threshold slider
   const slider = document.getElementById('setting-threshold');
   const display = document.getElementById('threshold-display');
   slider.addEventListener('input', () => { display.textContent = slider.value; });
@@ -73,7 +71,6 @@ function renderSettings(settings) {
     onSettingsChanged({ ...currentData.settings, alertThreshold: parseInt(slider.value) });
   });
 
-  // Ignore list checkboxes
   container.querySelectorAll('.ignore-checkbox').forEach(cb => {
     cb.addEventListener('change', () => {
       const newIgnore = [];
@@ -82,7 +79,6 @@ function renderSettings(settings) {
     });
   });
 
-  // Retention radio
   container.querySelectorAll('#setting-retention .radio-option').forEach(opt => {
     opt.addEventListener('click', () => {
       container.querySelectorAll('#setting-retention .radio-option').forEach(o => o.classList.remove('selected'));
@@ -91,7 +87,6 @@ function renderSettings(settings) {
     });
   });
 
-  // Export button
   document.getElementById('btn-export').addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

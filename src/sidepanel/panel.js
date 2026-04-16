@@ -2,6 +2,12 @@ let currentData = null;
 let refreshTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  // i18n static elements
+  document.getElementById('panel-title').textContent = t('appName');
+  document.getElementById('tab-btn-overview').textContent = t('tabOverview');
+  document.getElementById('tab-btn-details').textContent = t('tabDetails');
+  document.getElementById('tab-btn-settings').textContent = t('tabSettings');
+
   setupTabs();
   loadData();
   startPolling();
@@ -50,13 +56,13 @@ function updateStatusDot(data) {
   dot.className = 'status-dot';
   if (warningCount > 3) {
     dot.classList.add('status-red');
-    dot.setAttribute('aria-label', 'Status: critical');
+    dot.setAttribute('aria-label', t('statusCritical'));
   } else if (warningCount > 0) {
     dot.classList.add('status-yellow');
-    dot.setAttribute('aria-label', 'Status: warning');
+    dot.setAttribute('aria-label', t('statusWarning'));
   } else {
     dot.classList.add('status-green');
-    dot.setAttribute('aria-label', 'Status: healthy');
+    dot.setAttribute('aria-label', t('statusHealthy'));
   }
 }
 
