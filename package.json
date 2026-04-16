@@ -1,8 +1,11 @@
 {
-  "name": "extension-perf-monitor",
+  "name": "extension-audit",
   "private": true,
+  "version": "2.0.0",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "pack": "bash scripts/pack.sh",
+    "audit": "bash scripts/pack.sh 2>&1 | grep -E '\\[(PASS|WARN|INFO)\\]'"
   },
   "devDependencies": {
     "canvas": "^3.2.3"

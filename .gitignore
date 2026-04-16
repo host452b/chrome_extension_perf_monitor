@@ -1,6 +1,7 @@
 node_modules/
 .DS_Store
-*.zip
 *.crx
 *.pem
 package-lock.json
+dist/
+releases/
