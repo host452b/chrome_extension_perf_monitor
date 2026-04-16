@@ -89,7 +89,7 @@ async function syncExtensionMetadata() {
 }
 
 // Sync on startup
-syncExtensionMetadata();
+syncExtensionMetadata().catch(e => console.error('[PerfMon] syncExtensionMetadata failed:', e));
 
 // Sync on extension changes
 chrome.management.onInstalled.addListener(syncExtensionMetadata);
@@ -101,6 +101,7 @@ chrome.management.onDisabled.addListener(syncExtensionMetadata);
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_LIVE_SNAPSHOT') {
     (async () => {
+      try {
       const snapshot = collector.getSnapshot();
       const stored = await getAllData();
       const now = Date.now();
@@ -148,6 +149,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         extensions: stored.extensions,
         settings: stored.settings,
       });
+      } catch (e) {
+        console.error('[PerfMon] GET_LIVE_SNAPSHOT failed:', e);
+        sendResponse({ activity: {}, extensions: {}, settings: _DEFAULTS });
+      }
     })();
     return true;
   }
