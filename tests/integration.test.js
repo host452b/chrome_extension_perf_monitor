@@ -155,12 +155,12 @@ describe('Integration: Score consistency', () => {
 
 describe('Integration: Utility formatting', () => {
   it('score colors match thresholds', () => {
-    assert.equal(getScoreColor(0), '#22C55E');   // green
-    assert.equal(getScoreColor(49), '#22C55E');   // green
-    assert.equal(getScoreColor(50), '#EAB308');   // yellow
-    assert.equal(getScoreColor(69), '#EAB308');   // yellow
-    assert.equal(getScoreColor(70), '#EF4444');   // red
-    assert.equal(getScoreColor(100), '#EF4444');  // red
+    assert.equal(getScoreColor(0), '#34D399');   // green
+    assert.equal(getScoreColor(49), '#34D399');   // green
+    assert.equal(getScoreColor(50), '#FBBF24');   // yellow
+    assert.equal(getScoreColor(69), '#FBBF24');   // yellow
+    assert.equal(getScoreColor(70), '#F87171');   // red
+    assert.equal(getScoreColor(100), '#F87171');  // red
   });
 
   it('score labels match thresholds', () => {

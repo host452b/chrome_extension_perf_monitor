@@ -68,8 +68,8 @@ function renderAreaChart(activity) {
       labels,
       datasets: [{
         data: dataPoints,
-        borderColor: '#3B82F6',
-        backgroundColor: '#3B82F610',
+        borderColor: '#60A5FA',
+        backgroundColor: '#60A5FA08',
         fill: true,
         tension: 0.4,
         pointRadius: 0,
@@ -82,8 +82,8 @@ function renderAreaChart(activity) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1E293B',
-          borderColor: '#334155',
+          backgroundColor: '#151e2e',
+          borderColor: '#1e293b',
           borderWidth: 1,
           titleColor: '#F8FAFC',
           bodyColor: '#94A3B8',

@@ -10,25 +10,30 @@
   <div class="panel">
     <header class="panel-header">
       <div class="header-left">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
         <h1 id="panel-title" class="header-title">Perf Monitor</h1>
       </div>
-      <span id="status-dot" class="status-dot status-green" role="status" aria-label="Status: healthy"></span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="btn-settings-toggle" class="settings-toggle" aria-label="Settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <span id="status-dot" class="status-dot status-green" role="status" aria-label="Status: healthy"></span>
+      </div>
     </header>
 
-    <nav class="tabs">
-      <button class="tab active" data-tab="overview" id="tab-btn-overview">Overview</button>
-      <button class="tab" data-tab="details" id="tab-btn-details">Details</button>
-      <button class="tab" data-tab="settings" id="tab-btn-settings">Settings</button>
-    </nav>
-
-    <main class="tab-content">
-      <section id="tab-overview" class="tab-pane active"></section>
-      <section id="tab-details" class="tab-pane"></section>
-      <section id="tab-settings" class="tab-pane"></section>
+    <main id="panel-content" class="panel-content">
+      <!-- All sections rendered here by JS, scrollable -->
     </main>
+
+    <!-- Settings drawer (hidden by default) -->
+    <aside id="settings-drawer" class="settings-drawer hidden">
+      <div id="settings-content"></div>
+    </aside>
   </div>
 
   <script src="../../lib/chart.min.js"></script>

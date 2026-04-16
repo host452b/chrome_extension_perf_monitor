@@ -26,11 +26,11 @@ describe('formatNumber', () => {
 });
 
 describe('getScoreColor', () => {
-  it('returns green for low scores', () => assert.equal(getScoreColor(30), '#22C55E'));
-  it('returns yellow for medium scores', () => assert.equal(getScoreColor(60), '#EAB308'));
-  it('returns red for high scores', () => assert.equal(getScoreColor(85), '#EF4444'));
-  it('returns green for 0', () => assert.equal(getScoreColor(0), '#22C55E'));
-  it('returns red for 100', () => assert.equal(getScoreColor(100), '#EF4444'));
+  it('returns green for low scores', () => assert.equal(getScoreColor(30), '#34D399'));
+  it('returns yellow for medium scores', () => assert.equal(getScoreColor(60), '#FBBF24'));
+  it('returns red for high scores', () => assert.equal(getScoreColor(85), '#F87171'));
+  it('returns green for 0', () => assert.equal(getScoreColor(0), '#34D399'));
+  it('returns red for 100', () => assert.equal(getScoreColor(100), '#F87171'));
 });
 
 describe('getScoreLabel', () => {

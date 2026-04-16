@@ -53,7 +53,9 @@ function render({ activity, extensions, settings }) {
   }
 
   const maxScore = Math.max(...top5.map(e => e.score), 1);
-  listEl.innerHTML = top5.map(entry => {
+  // Column header row showing what the number means
+  const headerRow = `<div class="top-item-header"><span></span><span class="top-item-header-label">${escapeHtml(t('scoreLabel'))}</span></div>`;
+  listEl.innerHTML = headerRow + top5.map(entry => {
     const barWidth = Math.round((entry.score / maxScore) * 100);
     const color = getScoreColor(entry.score);
     return `
