@@ -29,21 +29,15 @@ function render({ activity, extensions, settings, nativeConnected }) {
   const extEntries = buildExtensionEntries(activity, extensions, settings);
   const warningCount = extEntries.filter(e => e.score >= settings.alertThreshold).length;
 
-  if (nativeConnected) {
-    let totalCpu = 0, totalMem = 0;
-    for (const e of extEntries) { totalCpu += e.cpu || 0; totalMem += e.rss || 0; }
-    document.getElementById('kpi-active').textContent = totalCpu.toFixed(1) + '%';
-    document.getElementById('kpi-traffic').textContent = formatBytes(totalMem);
-    document.getElementById('lbl-active').textContent = t('kpiCpu');
-    document.getElementById('lbl-traffic').textContent = t('kpiMemory');
-  } else {
-    const activeCount = Object.values(extensions).filter(e => e.enabled).length;
-    const totalRequests = extEntries.reduce((s, e) => s + e.totalRequests, 0);
-    document.getElementById('kpi-active').textContent = activeCount;
-    document.getElementById('kpi-traffic').textContent = formatNumber(totalRequests);
-    document.getElementById('lbl-active').textContent = t('kpiActive');
-    document.getElementById('lbl-traffic').textContent = t('kpiRequests');
-  }
+  // Always show estimated/real memory — the estimator always provides data
+  let totalMem = 0;
+  for (const e of extEntries) { totalMem += e.rss || 0; }
+  const activeCount = Object.values(extensions).filter(e => e.enabled).length;
+  const prefix = nativeConnected ? '' : '~';
+  document.getElementById('kpi-active').textContent = activeCount;
+  document.getElementById('kpi-traffic').textContent = prefix + formatBytes(totalMem);
+  document.getElementById('lbl-active').textContent = t('kpiActive');
+  document.getElementById('lbl-traffic').textContent = t('kpiMemory');
   document.getElementById('kpi-warnings').textContent = warningCount;
 
   const dot = document.getElementById('status-dot');

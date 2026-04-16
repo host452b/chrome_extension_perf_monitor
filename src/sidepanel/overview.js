@@ -14,25 +14,17 @@ function renderKpiCard(id, value, label, format) {
 function renderOverviewSection(data) {
   const entries = buildSortedEntries(data.activity, data.extensions);
   const warningCount = countWarnings(entries, data.settings.alertThreshold);
+  const prefix = data.nativeConnected ? '' : '~';
 
-  let kpiHtml;
-  if (data.nativeConnected) {
-    let totalCpu = 0, totalMem = 0;
-    for (const e of entries) { totalCpu += e.cpu || 0; totalMem += e.rss || 0; }
-    kpiHtml = `
-      ${renderKpiCard('kpi-cpu', totalCpu.toFixed(1) + '%', t('kpiCpu') || 'CPU', null)}
-      ${renderKpiCard('kpi-mem', totalMem, t('kpiMemory') || 'MEM', 'bytes')}
-      ${renderKpiCard('kpi-active', countActiveExtensions(data.extensions), t('kpiActive'), null)}
-      ${renderKpiCard('kpi-warnings', warningCount, t('kpiWarnings'), null)}
-    `;
-  } else {
-    kpiHtml = `
-      ${renderKpiCard('kpi-active', countActiveExtensions(data.extensions), t('kpiActive'), null)}
-      ${renderKpiCard('kpi-requests', sumField(entries, 'totalRequests'), t('kpiRequests'), 'number')}
-      ${renderKpiCard('kpi-traffic', sumField(entries, 'totalBytes'), t('kpiTraffic'), 'bytes')}
-      ${renderKpiCard('kpi-warnings', warningCount, t('kpiWarnings'), null)}
-    `;
-  }
+  let totalMem = 0, totalCpu = 0;
+  for (const e of entries) { totalMem += e.rss || 0; totalCpu += e.cpu || 0; }
+
+  const kpiHtml = `
+    ${renderKpiCard('kpi-mem', prefix + formatBytes(totalMem), t('kpiMemory'), null)}
+    ${renderKpiCard('kpi-cpu', prefix + Math.round(totalCpu), 'CPU', null)}
+    ${renderKpiCard('kpi-active', countActiveExtensions(data.extensions), t('kpiActive'), null)}
+    ${renderKpiCard('kpi-warnings', warningCount, t('kpiWarnings'), null)}
+  `;
 
   return `
     <div class="kpi-row">${kpiHtml}</div>
@@ -141,30 +133,8 @@ function renderConsumptionBars(entries) {
     return;
   }
 
-  // Fallback: network/permission based
-  const totalBytes = entries.reduce((s, e) => s + e.totalBytes, 0);
-  if (totalBytes === 0 && entries.every(e => e.totalRequests === 0)) {
-    container.innerHTML = '<div class="empty-state">' + escapeHtml(t('noTraffic')) + '</div>';
-    return;
-  }
-
-  const sorted = entries.slice().sort((a, b) => b.score - a.score);
-  const maxScore = Math.max(...sorted.map(e => e.score), 1);
-  container.innerHTML = sorted.slice(0, 10).map(entry => {
-    const pct = (entry.score / maxScore) * 100;
-    const color = getScoreColor(entry.score);
-    const detail = entry.totalRequests > 0
-      ? formatNumber(entry.totalRequests) + ' req'
-      : entry.permissions.length + ' perms';
-    return `
-      <div class="bar-item">
-        <span class="bar-label">${escapeHtml(entry.name)}</span>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
-        </div>
-        <span class="bar-value" title="${escapeAttr(detail)}">${entry.score}</span>
-      </div>`;
-  }).join('');
+  // No data at all
+  container.innerHTML = `<div class="empty-state">${escapeHtml(t('noTraffic'))}</div>`;
 }
 
 // --- Shared helpers ---
@@ -186,6 +156,10 @@ function buildSortedEntries(activity, extensions) {
       buckets: act?.buckets || [],
       cpu: act?.cpu || 0,
       rss: act?.rss || 0,
+      measured: act?.measured || false,
+      matchingTabs: act?.matchingTabs || 0,
+      reqPerMin: act?.reqPerMin || 0,
+      isPolling: act?.isPolling || false,
     });
   }
   entries.sort((a, b) => b.score - a.score);

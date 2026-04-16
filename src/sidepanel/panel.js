@@ -38,17 +38,9 @@ function renderAll() {
 
   // Flat layout: KPIs → CPU chart → Resource bars → Extension list
   container.innerHTML = `
-    ${currentData.nativeConnected
-      ? `<div class="native-status connected">${escapeHtml(t('nativeConnected'))}</div>`
-      : `<div class="native-setup" id="native-setup">
-          <div class="native-setup-text">${escapeHtml(t('nativeNotConnected'))}</div>
-          <button class="native-setup-btn" id="btn-copy-install">${escapeHtml(t('copyInstallCmd'))}</button>
-          <div class="native-setup-cmd hidden" id="install-cmd-box">
-            <code id="install-cmd"></code>
-            <div class="native-setup-hint">${escapeHtml(t('pasteInTerminal'))}</div>
-          </div>
-        </div>`
-    }
+    <div class="native-status ${currentData.nativeConnected ? 'connected' : ''}">${
+      escapeHtml(currentData.nativeConnected ? t('nativeConnected') : t('estimateMode'))
+    }</div>
     ${renderOverviewSection(currentData)}
 
     <div class="section-divider"></div>
@@ -81,23 +73,6 @@ function renderAll() {
 
   renderDetailsList(entries, currentData.settings);
 
-  // Wire native host install button
-  const copyBtn = document.getElementById('btn-copy-install');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const extId = chrome.runtime.id;
-      const repoUrl = 'https://github.com/host452b/chrome_extension_perf_monitor';
-      const cmd = `curl -sL ${repoUrl}/raw/main/native-host/install-remote.sh | bash -s ${extId}`;
-      const cmdBox = document.getElementById('install-cmd-box');
-      const cmdEl = document.getElementById('install-cmd');
-      cmdEl.textContent = cmd;
-      cmdBox.classList.remove('hidden');
-      navigator.clipboard.writeText(cmd).then(() => {
-        copyBtn.textContent = escapeHtml(t('copied'));
-        setTimeout(() => { copyBtn.textContent = escapeHtml(t('copyInstallCmd')); }, 2000);
-      });
-    });
-  }
 }
 
 function updateStatusDot(data) {

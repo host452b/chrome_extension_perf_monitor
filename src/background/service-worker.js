@@ -3,24 +3,34 @@ importScripts(
   '../shared/utils.js',
   '../shared/storage.js',
   './collector.js',
+  './estimator.js',
   './aggregator.js',
   './scorer.js',
   './native-bridge.js'
 );
 
 const collector = new Collector(chrome.runtime.id);
-
+const estimator = new ResourceEstimator(chrome.runtime.id);
 const nativeBridge = new NativeBridge();
 nativeBridge.connect();
 
-// --- Network request listener ---
+// --- Network request listener (also feeds estimator timestamps) ---
 chrome.webRequest.onCompleted.addListener(
-  (details) => collector.processRequest(details),
+  (details) => {
+    collector.processRequest(details);
+    // Feed request timestamp to estimator for frequency analysis
+    const extId = details.initiator && details.initiator.startsWith('chrome-extension://')
+      ? details.initiator.slice('chrome-extension://'.length).split('/')[0]
+      : null;
+    if (extId && extId !== chrome.runtime.id) {
+      estimator.recordRequest(extId, Date.now());
+    }
+  },
   { urls: ['<all_urls>'] },
   ['responseHeaders']
 );
 
-// --- Periodic aggregation ---
+// --- Periodic tasks ---
 chrome.alarms.create('aggregate', { periodInMinutes: 15 });
 chrome.alarms.create('mini-flush', { periodInMinutes: 2 });
 chrome.alarms.create('sample-native', { periodInMinutes: 0.5 });
@@ -101,7 +111,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           activity[extId] = { buckets: [...data.buckets], score: data.score || 0 };
         }
 
-        // Merge live snapshot
+        // Merge live network snapshot
         if (Object.keys(snapshot).length > 0) {
           for (const [extId, entry] of Object.entries(snapshot)) {
             if (!activity[extId]) activity[extId] = { buckets: [], score: 0 };
@@ -117,35 +127,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
         }
 
-        // Get process data from native host (may be empty if not installed)
-        const processData = nativeBridge.getLatest();
+        // Refresh tab data for estimator
+        await estimator.refreshTabs();
 
-        // Calculate scores for ALL extensions
+        // Native host data (may be empty)
+        const nativeData = nativeBridge.getLatest();
+        const nativeConnected = nativeBridge.isConnected();
+
+        // Calculate scores and estimates for ALL extensions
         for (const [extId, meta] of Object.entries(stored.extensions)) {
           if (!activity[extId]) activity[extId] = { buckets: [], score: 0 };
           const totalRequests = activity[extId].buckets.reduce((s, b) => s + b.requests, 0);
           const totalBytes = activity[extId].buckets.reduce((s, b) => s + b.bytesTransferred, 0);
-          const proc = processData[extId] || null;
+
+          // Use native data if available, otherwise estimate
+          const proc = nativeData[extId] || null;
+          const est = estimator.estimate(extId, meta, { totalRequests, totalBytes });
+
           activity[extId].score = calculateScore(
             { permissions: meta.permissions || [], contentScriptPatterns: meta.contentScriptPatterns || [] },
             { totalRequests, totalBytes },
-            proc
+            proc || { cpu: est.estCpu, rss: est.estMemory }
           );
+
+          // Attach resource data for UI
           if (proc) {
             activity[extId].cpu = proc.cpu;
             activity[extId].rss = proc.rss;
+            activity[extId].measured = true;
+          } else {
+            activity[extId].cpu = est.estCpu;
+            activity[extId].rss = est.estMemory;
+            activity[extId].measured = false;
           }
+          activity[extId].matchingTabs = est.matchingTabs;
+          activity[extId].reqPerMin = est.reqPerMin;
+          activity[extId].isPolling = est.isPolling;
         }
 
         sendResponse({
           activity,
           extensions: stored.extensions,
           settings: stored.settings,
-          nativeConnected: nativeBridge.isConnected(),
+          nativeConnected,
         });
       } catch (e) {
         console.error('[PerfMon] GET_LIVE_SNAPSHOT failed:', e);
-        sendResponse({ activity: {}, extensions: {}, settings: _DEFAULTS });
+        sendResponse({ activity: {}, extensions: {}, settings: _DEFAULTS, nativeConnected: false });
       }
     })();
     return true;
