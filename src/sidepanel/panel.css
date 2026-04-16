@@ -148,6 +148,8 @@ body {
 }
 
 .btn-disable:hover { background: #EF444440; }
+.btn-disable:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-disable:disabled:hover { background: #EF444420; }
 .btn-disable.confirming { background: var(--red); color: white; }
 
 .bar-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -182,3 +184,34 @@ body {
 
 .btn-export:hover { background: var(--surface-hover); }
 .empty-state { text-align: center; color: #64748B; padding: 32px 0; font-size: 13px; }
+
+/* Focus states for keyboard navigation */
+.tab:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+
+.sort-btn:focus-visible,
+.btn-export:focus-visible,
+.btn-disable:focus-visible,
+.radio-option:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.ext-card-header:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+
+.search-input:focus-visible {
+  outline: none;
+  border-color: var(--green);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
