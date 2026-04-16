@@ -62,8 +62,8 @@ English (also supports Chinese)
 |-------|------|------|
 | Store icon | assets/store/icon-store-128.png | 128×128 |
 | Screenshot 1 | assets/store/screenshot-1-overview.jpg | 1280×800 |
-| Screenshot 2 | assets/store/screenshot-2-details.jpg | 1280×800 |
-| Screenshot 3 | assets/store/screenshot-3-popup.jpg | 1280×800 |
+| Screenshot 2 | assets/store/screenshot-2-popup.jpg | 1280×800 |
+| Screenshot 3 | assets/store/screenshot-3-about.jpg | 1280×800 |
 | Small promo | assets/store/promo-small-440x280.jpg | 440×280 |
 | Large promo | assets/store/promo-large-1400x560.jpg | 1400×560 |
 
