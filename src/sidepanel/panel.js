@@ -4,7 +4,6 @@ let refreshTimer = null;
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('panel-title').textContent = t('appName');
 
-  // Settings drawer toggle
   document.getElementById('btn-settings-toggle').addEventListener('click', () => {
     const drawer = document.getElementById('settings-drawer');
     drawer.classList.toggle('hidden');
@@ -37,34 +36,21 @@ function renderAll() {
   const container = document.getElementById('panel-content');
   const entries = buildSortedEntries(currentData.activity, currentData.extensions);
 
-  // Build flat layout: KPIs → Chart → Extension list
+  // Flat layout: KPIs → CPU chart → Resource bars → Extension list
   container.innerHTML = `
-    <div class="kpi-row">
-      ${renderKpiCard('kpi-active', countActiveExtensions(currentData.extensions), t('kpiActive'), null)}
-      ${renderKpiCard('kpi-requests', sumField(entries, 'totalRequests'), t('kpiRequests'), 'number')}
-      ${renderKpiCard('kpi-traffic', sumField(entries, 'totalBytes'), t('kpiTraffic'), 'bytes')}
-      ${renderKpiCard('kpi-warnings', countWarnings(entries, currentData.settings.alertThreshold), t('kpiWarnings'), null)}
-    </div>
-
-    <div class="section-title">${escapeHtml(t('networkActivity'))}</div>
-    <div class="chart-container">
-      <canvas id="area-chart" height="120"></canvas>
-    </div>
-
-    <div class="section-title">${escapeHtml(t('consumptionByExt'))}</div>
-    <div id="consumption-bars"></div>
+    ${renderOverviewSection(currentData)}
 
     <div class="section-divider"></div>
 
     <div class="toolbar">
       <input id="search-ext" class="search-input" type="text" placeholder="${escapeAttr(t('searchPlaceholder'))}" value="${escapeAttr(currentSearch)}">
       <button class="sort-btn ${currentSort === 'score' ? 'active' : ''}" data-sort="score">${escapeHtml(t('sortScore'))}</button>
-      <button class="sort-btn ${currentSort === 'traffic' ? 'active' : ''}" data-sort="traffic">${escapeHtml(t('sortTraffic'))}</button>
+      <button class="sort-btn ${currentSort === 'traffic' ? 'active' : ''}" data-sort="traffic">MEM</button>
     </div>
     <div id="details-list"></div>
   `;
 
-  renderAreaChart(currentData.activity);
+  renderCpuChart(currentData.processHistory || {});
   renderConsumptionBars(entries);
 
   // Wire search + sort
