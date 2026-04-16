@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-panel-text').textContent = t('openPanel');
 
   loadData();
+  setInterval(loadData, 1000);
   document.getElementById('btn-open-panel').addEventListener('click', async () => {
     try {
       const win = await chrome.windows.getCurrent();

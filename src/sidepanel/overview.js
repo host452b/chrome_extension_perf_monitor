@@ -42,7 +42,7 @@ function renderConsumptionBars(entries) {
     const pct = (entry.score / maxScore) * 100;
     const color = getScoreColor(entry.score);
     return `
-      <div class="bar-item">
+      <div class="bar-item" data-bar-id="${entry.id}">
         <span class="bar-label">${escapeHtml(entry.name)}</span>
         <div class="bar-track">
           <div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
