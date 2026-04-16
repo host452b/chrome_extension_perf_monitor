@@ -13,16 +13,15 @@ function renderDetails(data) {
 
   container.innerHTML = `
     <div class="toolbar">
-      <input id="search-ext" class="search-input" type="text" placeholder="Search extensions..." value="${escapeHtml(currentSearch)}">
-      <button class="sort-btn ${currentSort === 'score' ? 'active' : ''}" data-sort="score">Score</button>
-      <button class="sort-btn ${currentSort === 'traffic' ? 'active' : ''}" data-sort="traffic">Traffic</button>
-      <button class="sort-btn ${currentSort === 'requests' ? 'active' : ''}" data-sort="requests">Requests</button>
+      <input id="search-ext" class="search-input" type="text" placeholder="${escapeAttr(t('searchPlaceholder'))}" value="${escapeAttr(currentSearch)}">
+      <button class="sort-btn ${currentSort === 'score' ? 'active' : ''}" data-sort="score">${escapeHtml(t('sortScore'))}</button>
+      <button class="sort-btn ${currentSort === 'traffic' ? 'active' : ''}" data-sort="traffic">${escapeHtml(t('sortTraffic'))}</button>
+      <button class="sort-btn ${currentSort === 'requests' ? 'active' : ''}" data-sort="requests">${escapeHtml(t('sortRequests'))}</button>
     </div>
     <div id="details-list"></div>
   `;
 
-  const searchInput = document.getElementById('search-ext');
-  searchInput.addEventListener('input', (e) => {
+  document.getElementById('search-ext').addEventListener('input', (e) => {
     currentSearch = e.target.value;
     renderDetailsList(entries, data.settings);
   });
@@ -52,64 +51,62 @@ function renderDetailsList(entries, settings) {
 
   const listEl = document.getElementById('details-list');
   if (filtered.length === 0) {
-    listEl.innerHTML = '<div class="empty-state">No extensions found</div>';
+    listEl.innerHTML = `<div class="empty-state">${escapeHtml(t('noExtensions'))}</div>`;
     return;
   }
 
   listEl.innerHTML = filtered.map(entry => {
     const color = getScoreColor(entry.score);
-    const bgColor = color + '20';
-    const iconUrl = getIconUrl(entry.icons);
+    const bgColor = color + '15';
 
     const allPerms = [...entry.permissions, ...entry.hostPermissions];
     const permsHtml = allPerms.length > 0
       ? allPerms.map(p => `<span class="perm-tag ${SENSITIVE_PERMS.includes(p) ? 'sensitive' : ''}">${escapeHtml(p)}</span>`).join('')
-      : '<span style="color:var(--fg-muted);font-size:12px">None</span>';
+      : `<span style="color:var(--fg-muted);font-size:12px">${escapeHtml(t('detailNone'))}</span>`;
 
     const latestBucket = entry.buckets.length > 0 ? entry.buckets[entry.buckets.length - 1] : null;
     const domains = latestBucket?.topDomains || {};
     const topDomains = Object.entries(domains).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const domainsHtml = topDomains.length > 0
       ? `<ul class="domain-list">${topDomains.map(([d, c]) => `<li>${escapeHtml(d)} <span>${c}</span></li>`).join('')}</ul>`
-      : '<span style="color:var(--fg-muted);font-size:12px">None</span>';
+      : `<span style="color:var(--fg-muted);font-size:12px">${escapeHtml(t('detailNone'))}</span>`;
 
-    const scopeText = entry.contentScriptPatterns.length === 0 ? 'None'
+    const scopeText = entry.contentScriptPatterns.length === 0 ? t('detailNone')
       : entry.contentScriptPatterns.some(p => p === '<all_urls>' || p.includes('*://*/*'))
-        ? 'All sites' : `${entry.contentScriptPatterns.length} pattern(s)`;
+        ? t('detailAllSites') : `${entry.contentScriptPatterns.length} ${t('detailPatterns')}`;
 
-    const disabledAttr = entry.enabled ? '' : 'disabled style="opacity:0.5;cursor:default"';
+    const disabledAttr = entry.enabled ? '' : 'disabled style="opacity:0.4;cursor:default"';
 
     return `
       <div class="ext-card" data-ext-id="${entry.id}">
         <div class="ext-card-header" tabindex="0" role="button" aria-expanded="false" onclick="toggleCard(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCard(this)}">
-          <img class="ext-icon" src="${iconUrl}" alt="" width="24" height="24">
           <span class="ext-name">${escapeHtml(entry.name)}</span>
           <span class="ext-version">${escapeHtml(entry.version)}</span>
-          <span class="ext-score-badge" style="color:${color};background:${bgColor}">${entry.score}</span>
+          <span class="ext-score-badge" style="color:${color};background:${bgColor}" title="${escapeAttr(t('scoreTooltip'))}">${entry.score}</span>
         </div>
         <div class="ext-card-body">
           <div class="ext-detail-row">
-            <span class="ext-detail-label">Requests</span>
+            <span class="ext-detail-label">${escapeHtml(t('detailRequests'))}</span>
             <span class="ext-detail-value">${formatNumber(entry.totalRequests)}</span>
           </div>
           <div class="ext-detail-row">
-            <span class="ext-detail-label">Traffic</span>
+            <span class="ext-detail-label">${escapeHtml(t('detailTraffic'))}</span>
             <span class="ext-detail-value">${formatBytes(entry.totalBytes)}</span>
           </div>
           <div class="ext-detail-row">
-            <span class="ext-detail-label">Content Scripts</span>
-            <span class="ext-detail-value">${scopeText}</span>
+            <span class="ext-detail-label">${escapeHtml(t('detailContentScripts'))}</span>
+            <span class="ext-detail-value">${escapeHtml(scopeText)}</span>
           </div>
           <div style="margin-top:8px">
-            <div class="section-title">Permissions</div>
+            <div class="section-title">${escapeHtml(t('sectionPermissions'))}</div>
             <div>${permsHtml}</div>
           </div>
           <div style="margin-top:8px">
-            <div class="section-title">Top Domains</div>
+            <div class="section-title">${escapeHtml(t('sectionTopDomains'))}</div>
             ${domainsHtml}
           </div>
           <button class="btn-disable" ${disabledAttr} onclick="handleDisable(event, '${entry.id}')">
-            ${entry.enabled ? 'Disable Extension' : 'Already Disabled'}
+            ${entry.enabled ? escapeHtml(t('btnDisable')) : escapeHtml(t('btnDisabled'))}
           </button>
         </div>
       </div>`;
@@ -128,20 +125,20 @@ function handleDisable(event, extId) {
 
   if (btn.classList.contains('confirming')) {
     chrome.management.setEnabled(extId, false, () => {
-      btn.textContent = 'Already Disabled';
+      btn.textContent = t('btnDisabled');
       btn.disabled = true;
-      btn.style.opacity = '0.5';
+      btn.style.opacity = '0.4';
       btn.classList.remove('confirming');
     });
     return;
   }
 
   btn.classList.add('confirming');
-  btn.textContent = 'Click again to confirm';
+  btn.textContent = t('btnConfirm');
   setTimeout(() => {
     if (btn.classList.contains('confirming')) {
       btn.classList.remove('confirming');
-      btn.textContent = 'Disable Extension';
+      btn.textContent = t('btnDisable');
     }
   }, 3000);
 }

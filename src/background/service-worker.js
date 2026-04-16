@@ -131,17 +131,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       }
 
-      // Calculate scores
-      for (const extId of Object.keys(activity)) {
-        const meta = stored.extensions[extId];
-        if (meta) {
-          const totalRequests = activity[extId].buckets.reduce((s, b) => s + b.requests, 0);
-          const totalBytes = activity[extId].buckets.reduce((s, b) => s + b.bytesTransferred, 0);
-          activity[extId].score = calculateScore(
-            { permissions: meta.permissions || [], contentScriptPatterns: meta.contentScriptPatterns || [] },
-            { totalRequests, totalBytes }
-          );
+      // Calculate scores for ALL extensions (not just those with activity)
+      for (const [extId, meta] of Object.entries(stored.extensions)) {
+        if (!activity[extId]) {
+          activity[extId] = { buckets: [], score: 0 };
         }
+        const totalRequests = activity[extId].buckets.reduce((s, b) => s + b.requests, 0);
+        const totalBytes = activity[extId].buckets.reduce((s, b) => s + b.bytesTransferred, 0);
+        activity[extId].score = calculateScore(
+          { permissions: meta.permissions || [], contentScriptPatterns: meta.contentScriptPatterns || [] },
+          { totalRequests, totalBytes }
+        );
       }
 
       sendResponse({

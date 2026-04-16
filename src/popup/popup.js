@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Apply i18n to static elements
+  document.getElementById('header-title').textContent = t('appName');
+  document.getElementById('lbl-active').textContent = t('kpiActive');
+  document.getElementById('lbl-traffic').textContent = t('kpiTraffic');
+  document.getElementById('lbl-warnings').textContent = t('kpiWarnings');
+  document.getElementById('section-top').textContent = t('topImpact');
+  document.getElementById('btn-panel-text').textContent = t('openPanel');
+
   loadData();
   document.getElementById('btn-open-panel').addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
@@ -27,20 +35,20 @@ function render({ activity, extensions, settings }) {
   dot.className = 'status-dot';
   if (warningCount > 3) {
     dot.classList.add('status-red');
-    dot.setAttribute('aria-label', 'Status: critical');
+    dot.setAttribute('aria-label', t('statusCritical'));
   } else if (warningCount > 0) {
     dot.classList.add('status-yellow');
-    dot.setAttribute('aria-label', 'Status: warning');
+    dot.setAttribute('aria-label', t('statusWarning'));
   } else {
     dot.classList.add('status-green');
-    dot.setAttribute('aria-label', 'Status: healthy');
+    dot.setAttribute('aria-label', t('statusHealthy'));
   }
 
   const top5 = extEntries.slice(0, 5);
   const listEl = document.getElementById('top-list');
 
   if (top5.length === 0) {
-    listEl.innerHTML = '<div class="empty-state">Collecting data...</div>';
+    listEl.innerHTML = `<div class="empty-state">${escapeHtml(t('collecting'))}</div>`;
     return;
   }
 
@@ -48,15 +56,13 @@ function render({ activity, extensions, settings }) {
   listEl.innerHTML = top5.map(entry => {
     const barWidth = Math.round((entry.score / maxScore) * 100);
     const color = getScoreColor(entry.score);
-    const iconUrl = getIconUrl(entry.icons);
     return `
       <div class="top-item" data-ext-id="${entry.id}">
-        <img class="top-item-icon" src="${iconUrl}" alt="" width="20" height="20">
         <span class="top-item-name">${escapeHtml(entry.name)}</span>
         <div class="top-item-bar-wrap">
           <div class="top-item-bar" style="width:${barWidth}%;background:${color}"></div>
         </div>
-        <span class="top-item-score" style="color:${color}" title="${getScoreLabel(entry.score)} impact">${entry.score}</span>
+        <span class="top-item-score" style="color:${color}" title="${escapeAttr(t('scoreTooltip'))}">${entry.score}</span>
       </div>`;
   }).join('');
 }
@@ -77,9 +83,13 @@ function buildExtensionEntries(activity, extensions, settings) {
 }
 
 function getIconUrl(icons) {
-  if (!icons || icons.length === 0) return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="%23334155" rx="4"/></svg>';
+  if (!icons || icons.length === 0) return '';
   const icon = icons.find(i => i.size >= 32) || icons[icons.length - 1];
-  return icon.url;
+  return icon.url || '';
+}
+
+function escapeAttr(str) {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function escapeHtml(str) {
