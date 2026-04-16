@@ -11,12 +11,24 @@ const MAX_BYTES_PER_HOUR = 20 * 1024 * 1024;
 const MAX_PERMISSION_SCORE = 15;
 const MAX_SCOPE_SCORE = 5;
 
-const WEIGHTS = {
+const WEIGHTS_WITH_PROCESS = {
+  cpu: 0.30,
+  memory: 0.20,
+  networkFrequency: 0.10,
+  dataVolume: 0.05,
+  permissions: 0.20,
+  scope: 0.15,
+};
+
+const WEIGHTS_WITHOUT_PROCESS = {
   networkFrequency: 0.25,
   dataVolume: 0.15,
   permissions: 0.35,
   scope: 0.25,
 };
+
+const MAX_CPU = 25;
+const MAX_RSS = 200 * 1024 * 1024;
 
 function normalizeValue(value, max) {
   if (max === 0) return 0;
@@ -40,17 +52,25 @@ function calculateScopeScore(contentScriptPatterns) {
   return Math.min(contentScriptPatterns.length, MAX_SCOPE_SCORE);
 }
 
-function calculateScore(meta, activity) {
-  const netFreq = normalizeValue(activity.totalRequests, MAX_REQUESTS_PER_HOUR);
-  const dataVol = normalizeValue(activity.totalBytes, MAX_BYTES_PER_HOUR);
+function calculateScore(meta, activity, processData) {
   const permScore = normalizeValue(calculatePermissionScore(meta.permissions), MAX_PERMISSION_SCORE);
   const scopeScore = normalizeValue(calculateScopeScore(meta.contentScriptPatterns), MAX_SCOPE_SCORE);
+  const netFreq = normalizeValue(activity.totalRequests, MAX_REQUESTS_PER_HOUR);
+  const dataVol = normalizeValue(activity.totalBytes, MAX_BYTES_PER_HOUR);
 
-  const raw =
-    netFreq * WEIGHTS.networkFrequency +
-    dataVol * WEIGHTS.dataVolume +
-    permScore * WEIGHTS.permissions +
-    scopeScore * WEIGHTS.scope;
+  let raw;
+  if (processData && (processData.cpu > 0 || processData.rss > 0)) {
+    const w = WEIGHTS_WITH_PROCESS;
+    const cpuScore = normalizeValue(processData.cpu, MAX_CPU);
+    const memScore = normalizeValue(processData.rss, MAX_RSS);
+    raw = cpuScore * w.cpu + memScore * w.memory +
+          netFreq * w.networkFrequency + dataVol * w.dataVolume +
+          permScore * w.permissions + scopeScore * w.scope;
+  } else {
+    const w = WEIGHTS_WITHOUT_PROCESS;
+    raw = netFreq * w.networkFrequency + dataVol * w.dataVolume +
+          permScore * w.permissions + scopeScore * w.scope;
+  }
 
   return Math.min(100, Math.max(0, Math.round(raw)));
 }
