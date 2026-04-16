@@ -2,8 +2,10 @@ const STORAGE_KEY_ACTIVITY = 'activity';
 const STORAGE_KEY_EXTENSIONS = 'extensions';
 const STORAGE_KEY_SETTINGS = 'settings';
 
-const __DEFAULT_SETTINGS = (typeof _DEFAULT_SETTINGS !== 'undefined')
-  ? _DEFAULT_SETTINGS
+// DEFAULT_SETTINGS is always available from constants.js (loaded before this file)
+// Fallback only needed if somehow loaded standalone
+const _DEFAULTS = (typeof DEFAULT_SETTINGS !== 'undefined')
+  ? DEFAULT_SETTINGS
   : { refreshInterval: 30, alertThreshold: 70, ignoreList: [], retentionHours: 24 };
 
 async function getActivity() {
@@ -26,7 +28,7 @@ async function saveExtensions(extensions) {
 
 async function getSettings() {
   const result = await chrome.storage.local.get(STORAGE_KEY_SETTINGS);
-  return { ..._DEFAULT_SETTINGS, ...result[STORAGE_KEY_SETTINGS] };
+  return { ..._DEFAULTS, ...result[STORAGE_KEY_SETTINGS] };
 }
 
 async function saveSettings(settings) {
@@ -42,6 +44,6 @@ async function getAllData() {
   return {
     activity: result[STORAGE_KEY_ACTIVITY] || {},
     extensions: result[STORAGE_KEY_EXTENSIONS] || {},
-    settings: { ..._DEFAULT_SETTINGS, ...result[STORAGE_KEY_SETTINGS] },
+    settings: { ..._DEFAULTS, ...result[STORAGE_KEY_SETTINGS] },
   };
 }
