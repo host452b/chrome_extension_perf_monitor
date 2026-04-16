@@ -25,15 +25,25 @@ function loadData() {
   });
 }
 
-function render({ activity, extensions, settings }) {
+function render({ activity, extensions, settings, nativeConnected }) {
   const extEntries = buildExtensionEntries(activity, extensions, settings);
-
-  const activeCount = Object.values(extensions).filter(e => e.enabled).length;
-  const totalRequests = extEntries.reduce((s, e) => s + e.totalRequests, 0);
   const warningCount = extEntries.filter(e => e.score >= settings.alertThreshold).length;
 
-  document.getElementById('kpi-active').textContent = activeCount;
-  document.getElementById('kpi-traffic').textContent = formatNumber(totalRequests);
+  if (nativeConnected) {
+    let totalCpu = 0, totalMem = 0;
+    for (const e of extEntries) { totalCpu += e.cpu || 0; totalMem += e.rss || 0; }
+    document.getElementById('kpi-active').textContent = totalCpu.toFixed(1) + '%';
+    document.getElementById('kpi-traffic').textContent = formatBytes(totalMem);
+    document.getElementById('lbl-active').textContent = t('kpiCpu');
+    document.getElementById('lbl-traffic').textContent = t('kpiMemory');
+  } else {
+    const activeCount = Object.values(extensions).filter(e => e.enabled).length;
+    const totalRequests = extEntries.reduce((s, e) => s + e.totalRequests, 0);
+    document.getElementById('kpi-active').textContent = activeCount;
+    document.getElementById('kpi-traffic').textContent = formatNumber(totalRequests);
+    document.getElementById('lbl-active').textContent = t('kpiActive');
+    document.getElementById('lbl-traffic').textContent = t('kpiRequests');
+  }
   document.getElementById('kpi-warnings').textContent = warningCount;
 
   const dot = document.getElementById('status-dot');
@@ -82,7 +92,9 @@ function buildExtensionEntries(activity, extensions, settings) {
     const totalRequests = act ? act.buckets.reduce((s, b) => s + b.requests, 0) : 0;
     const totalBytes = act ? act.buckets.reduce((s, b) => s + b.bytesTransferred, 0) : 0;
     const score = act?.score || 0;
-    entries.push({ id: extId, name: ext.name, version: ext.version, enabled: ext.enabled, totalRequests, totalBytes, score });
+    const cpu = act?.cpu || 0;
+    const rss = act?.rss || 0;
+    entries.push({ id: extId, name: ext.name, version: ext.version, enabled: ext.enabled, totalRequests, totalBytes, score, cpu, rss });
   }
   entries.sort((a, b) => b.score - a.score);
   return entries;

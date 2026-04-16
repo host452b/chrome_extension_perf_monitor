@@ -78,6 +78,11 @@ const _strings = {
     retention1h: '1 hour',
     retention6h: '6 hours',
     retention24h: '24 hours',
+
+    kpiCpu: 'CPU',
+    kpiMemory: 'MEM',
+    nativeConnected: 'Native host connected — real CPU/memory data',
+    nativeNotConnected: 'Install native host for CPU/memory data',
   },
   zh: {
     appName: '扩展性能监控',
@@ -145,6 +150,11 @@ const _strings = {
     retention1h: '1 小时',
     retention6h: '6 小时',
     retention24h: '24 小时',
+
+    kpiCpu: 'CPU',
+    kpiMemory: '内存',
+    nativeConnected: '本地采集器已连接 — 显示真实 CPU/内存',
+    nativeNotConnected: '安装本地采集器以获取 CPU/内存数据',
   },
 };
 

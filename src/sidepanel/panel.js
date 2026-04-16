@@ -38,6 +38,7 @@ function renderAll() {
 
   // Flat layout: KPIs → CPU chart → Resource bars → Extension list
   container.innerHTML = `
+    <div class="native-status ${currentData.nativeConnected ? 'connected' : ''}">${escapeHtml(currentData.nativeConnected ? t('nativeConnected') : t('nativeNotConnected'))}</div>
     ${renderOverviewSection(currentData)}
 
     <div class="section-divider"></div>
