@@ -48,6 +48,8 @@ const DEFAULT_SETTINGS = {
 
 const BUCKET_INTERVAL_MS = 15 * 60 * 1000;
 
+const NATIVE_HOST_NAME = 'com.perfmonitor.host';
+
 if (typeof module !== 'undefined') {
   module.exports = {
     SENSITIVE_PERMISSIONS,
@@ -56,5 +58,6 @@ if (typeof module !== 'undefined') {
     COLORS,
     DEFAULT_SETTINGS,
     BUCKET_INTERVAL_MS,
+    NATIVE_HOST_NAME,
   };
 }
