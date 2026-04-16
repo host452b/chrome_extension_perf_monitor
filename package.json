@@ -1,0 +1,7 @@
+{
+  "name": "extension-perf-monitor",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}
