@@ -18,9 +18,10 @@ chrome.webRequest.onCompleted.addListener(
 
 // --- Periodic aggregation via alarms (every 15 minutes) ---
 chrome.alarms.create('aggregate', { periodInMinutes: 15 });
+chrome.alarms.create('mini-flush', { periodInMinutes: 2 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'aggregate') {
+  if (alarm.name === 'aggregate' || alarm.name === 'mini-flush') {
     await flushAndPrune();
   }
 });
@@ -81,7 +82,6 @@ async function syncExtensionMetadata() {
       permissions: ext.permissions || [],
       hostPermissions: ext.hostPermissions || [],
       contentScriptPatterns,
-      hasBackgroundWorker: !!(ext.backgroundUrl || ext.offlineEnabled),
     };
   }
 
@@ -104,11 +104,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const snapshot = collector.getSnapshot();
       const stored = await getAllData();
       const now = Date.now();
-      let activity = { ...stored.activity };
-      if (Object.keys(snapshot).length > 0) {
-        activity = mergeSnapshotIntoActivity(activity, snapshot, now);
+      const activity = {};
+
+      // Copy stored buckets
+      for (const [extId, data] of Object.entries(stored.activity)) {
+        activity[extId] = { buckets: [...data.buckets], score: data.score || 0 };
       }
-      // Calculate scores for live data
+
+      // Merge live snapshot as a single "current" bucket (replace if exists, don't duplicate)
+      if (Object.keys(snapshot).length > 0) {
+        for (const [extId, entry] of Object.entries(snapshot)) {
+          if (!activity[extId]) {
+            activity[extId] = { buckets: [], score: 0 };
+          }
+          // Remove any existing live bucket (timestamp === 0 marks it as live)
+          activity[extId].buckets = activity[extId].buckets.filter(b => b._live !== true);
+          activity[extId].buckets.push({
+            timestamp: now,
+            requests: entry.requests,
+            bytesTransferred: entry.bytes,
+            byType: { ...entry.byType },
+            topDomains: { ...entry.topDomains },
+            _live: true,
+          });
+        }
+      }
+
+      // Calculate scores
       for (const extId of Object.keys(activity)) {
         const meta = stored.extensions[extId];
         if (meta) {
@@ -120,13 +142,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           );
         }
       }
+
       sendResponse({
         activity,
         extensions: stored.extensions,
         settings: stored.settings,
       });
     })();
-    return true; // async sendResponse
+    return true;
   }
 
   if (message.type === 'SAVE_SETTINGS') {
@@ -135,7 +158,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'OPEN_SIDE_PANEL') {
-    chrome.sidePanel.open({ windowId: sender.tab?.windowId }).then(() => sendResponse({ ok: true }));
+    chrome.windows.getCurrent((win) => {
+      chrome.sidePanel.open({ windowId: win.id }).then(() => sendResponse({ ok: true }));
+    });
     return true;
   }
 });

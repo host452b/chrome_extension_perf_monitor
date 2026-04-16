@@ -1,8 +1,10 @@
-const SENSITIVE_PERMISSIONS = [
-  '<all_urls>', 'tabs', 'webRequest', 'webRequestBlocking',
-  'cookies', 'history', 'bookmarks', 'debugger',
-  'clipboardRead', 'clipboardWrite', 'nativeMessaging',
-];
+const _SENSITIVE_PERMISSIONS = (typeof SENSITIVE_PERMISSIONS !== 'undefined')
+  ? SENSITIVE_PERMISSIONS
+  : [
+    '<all_urls>', 'tabs', 'webRequest', 'webRequestBlocking',
+    'cookies', 'history', 'bookmarks', 'debugger',
+    'clipboardRead', 'clipboardWrite', 'nativeMessaging',
+  ];
 
 const MAX_REQUESTS_PER_HOUR = 2000;
 const MAX_BYTES_PER_HOUR = 20 * 1024 * 1024;
@@ -24,7 +26,7 @@ function normalizeValue(value, max) {
 function calculatePermissionScore(permissions) {
   let score = 0;
   for (const perm of permissions) {
-    score += SENSITIVE_PERMISSIONS.includes(perm) ? 2 : 0.5;
+    score += _SENSITIVE_PERMISSIONS.includes(perm) ? 2 : 0.5;
   }
   return score;
 }

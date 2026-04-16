@@ -13,7 +13,7 @@ async function loadData() {
 }
 
 function render({ activity, extensions, settings }) {
-  const extEntries = buildExtensionEntries(activity, extensions);
+  const extEntries = buildExtensionEntries(activity, extensions, settings);
 
   const activeCount = Object.values(extensions).filter(e => e.enabled).length;
   const totalBytes = extEntries.reduce((sum, e) => sum + e.totalBytes, 0);
@@ -54,9 +54,11 @@ function render({ activity, extensions, settings }) {
   }).join('');
 }
 
-function buildExtensionEntries(activity, extensions) {
+function buildExtensionEntries(activity, extensions, settings) {
+  const ignoreList = settings?.ignoreList || [];
   const entries = [];
   for (const [extId, ext] of Object.entries(extensions)) {
+    if (ignoreList.includes(extId)) continue;
     const act = activity[extId];
     const totalRequests = act ? act.buckets.reduce((s, b) => s + b.requests, 0) : 0;
     const totalBytes = act ? act.buckets.reduce((s, b) => s + b.bytesTransferred, 0) : 0;
