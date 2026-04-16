@@ -8,8 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-panel-text').textContent = t('openPanel');
 
   loadData();
-  document.getElementById('btn-open-panel').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
+  document.getElementById('btn-open-panel').addEventListener('click', async () => {
+    try {
+      const win = await chrome.windows.getCurrent();
+      await chrome.sidePanel.open({ windowId: win.id });
+      window.close(); // close popup after opening panel
+    } catch (e) {
+      console.error('[PerfMon] Failed to open side panel:', e);
+    }
   });
 });
 
