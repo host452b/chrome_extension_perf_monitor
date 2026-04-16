@@ -1,5 +1,5 @@
 function renderSettings(settings) {
-  const container = document.getElementById('tab-settings');
+  const container = document.getElementById('settings-content');
   const extensions = currentData?.extensions || {};
   const ignoreList = settings.ignoreList || [];
 

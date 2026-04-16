@@ -2,36 +2,27 @@ let currentData = null;
 let refreshTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // i18n static elements
   document.getElementById('panel-title').textContent = t('appName');
-  document.getElementById('tab-btn-overview').textContent = t('tabOverview');
-  document.getElementById('tab-btn-details').textContent = t('tabDetails');
-  document.getElementById('tab-btn-settings').textContent = t('tabSettings');
 
-  setupTabs();
+  // Settings drawer toggle
+  document.getElementById('btn-settings-toggle').addEventListener('click', () => {
+    const drawer = document.getElementById('settings-drawer');
+    drawer.classList.toggle('hidden');
+    if (!drawer.classList.contains('hidden') && currentData) {
+      renderSettings(currentData.settings);
+    }
+  });
+
   loadData();
   startPolling();
 });
-
-function setupTabs() {
-  const tabs = document.querySelectorAll('.tab');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
-      if (currentData) renderActiveTab();
-    });
-  });
-}
 
 function loadData() {
   chrome.runtime.sendMessage({ type: 'GET_LIVE_SNAPSHOT' }, (response) => {
     if (!response) return;
     currentData = response;
     updateStatusDot(response);
-    renderActiveTab();
+    renderAll();
   });
 }
 
@@ -41,12 +32,57 @@ function startPolling() {
   refreshTimer = setInterval(loadData, interval * 1000);
 }
 
-function renderActiveTab() {
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab;
+function renderAll() {
   if (!currentData) return;
-  if (activeTab === 'overview') renderOverview(currentData);
-  if (activeTab === 'details') renderDetails(currentData);
-  if (activeTab === 'settings') renderSettings(currentData.settings);
+  const container = document.getElementById('panel-content');
+  const entries = buildSortedEntries(currentData.activity, currentData.extensions);
+
+  // Build flat layout: KPIs → Chart → Extension list
+  container.innerHTML = `
+    <div class="kpi-row">
+      ${renderKpiCard('kpi-active', countActiveExtensions(currentData.extensions), t('kpiActive'), null)}
+      ${renderKpiCard('kpi-requests', sumField(entries, 'totalRequests'), t('kpiRequests'), 'number')}
+      ${renderKpiCard('kpi-traffic', sumField(entries, 'totalBytes'), t('kpiTraffic'), 'bytes')}
+      ${renderKpiCard('kpi-warnings', countWarnings(entries, currentData.settings.alertThreshold), t('kpiWarnings'), null)}
+    </div>
+
+    <div class="section-title">${escapeHtml(t('networkActivity'))}</div>
+    <div class="chart-container">
+      <canvas id="area-chart" height="120"></canvas>
+    </div>
+
+    <div class="section-title">${escapeHtml(t('consumptionByExt'))}</div>
+    <div id="consumption-bars"></div>
+
+    <div class="section-divider"></div>
+
+    <div class="toolbar">
+      <input id="search-ext" class="search-input" type="text" placeholder="${escapeAttr(t('searchPlaceholder'))}" value="${escapeAttr(currentSearch)}">
+      <button class="sort-btn ${currentSort === 'score' ? 'active' : ''}" data-sort="score">${escapeHtml(t('sortScore'))}</button>
+      <button class="sort-btn ${currentSort === 'traffic' ? 'active' : ''}" data-sort="traffic">${escapeHtml(t('sortTraffic'))}</button>
+    </div>
+    <div id="details-list"></div>
+  `;
+
+  renderAreaChart(currentData.activity);
+  renderConsumptionBars(entries);
+
+  // Wire search + sort
+  document.getElementById('search-ext').addEventListener('input', (e) => {
+    currentSearch = e.target.value;
+    renderDetailsList(entries, currentData.settings);
+  });
+
+  container.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentSort = btn.dataset.sort;
+      container.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDetailsList(entries, currentData.settings);
+    });
+  });
+
+  renderDetailsList(entries, currentData.settings);
 }
 
 function updateStatusDot(data) {

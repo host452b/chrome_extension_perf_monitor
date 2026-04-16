@@ -1,8 +1,8 @@
 const SCORE_GREEN = 50;
 const SCORE_YELLOW = 70;
-const COLOR_GREEN = '#22C55E';
-const COLOR_YELLOW = '#EAB308';
-const COLOR_RED = '#EF4444';
+const COLOR_GREEN = '#34D399';
+const COLOR_YELLOW = '#FBBF24';
+const COLOR_RED = '#F87171';
 const BUCKET_MS = 15 * 60 * 1000;
 
 function formatBytes(bytes) {

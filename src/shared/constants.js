@@ -27,14 +27,14 @@ const SCORE_THRESHOLDS = {
 
 const COLORS = {
   background: '#0F172A',
-  surface: '#1E293B',
-  surfaceHover: '#334155',
-  foreground: '#F8FAFC',
-  muted: '#272F42',
-  border: '#475569',
-  green: '#22C55E',
-  yellow: '#EAB308',
-  red: '#EF4444',
+  surface: '#151e2e',
+  surfaceHover: '#1c2940',
+  foreground: '#E2E8F0',
+  muted: '#1e293b',
+  border: '#1e293b',
+  green: '#34D399',
+  yellow: '#FBBF24',
+  red: '#F87171',
   accent: '#22C55E',
   chartLine: '#3B82F6',
 };
