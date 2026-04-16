@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Apply i18n to static elements
   document.getElementById('header-title').textContent = t('appName');
-  document.getElementById('lbl-active').textContent = t('kpiActive');
-  document.getElementById('lbl-traffic').textContent = t('kpiTraffic');
+  document.getElementById('lbl-active').textContent = 'CPU';
+  document.getElementById('lbl-traffic').textContent = 'MEM';
   document.getElementById('lbl-warnings').textContent = t('kpiWarnings');
   document.getElementById('section-top').textContent = t('topImpact');
   document.getElementById('btn-panel-text').textContent = t('openPanel');
@@ -29,12 +29,15 @@ async function loadData() {
 function render({ activity, extensions, settings }) {
   const extEntries = buildExtensionEntries(activity, extensions, settings);
 
-  const activeCount = Object.values(extensions).filter(e => e.enabled).length;
-  const totalBytes = extEntries.reduce((sum, e) => sum + e.totalBytes, 0);
+  let totalCpu = 0, totalMemory = 0;
+  for (const e of extEntries) {
+    totalCpu += e.cpu || 0;
+    totalMemory += e.memory || 0;
+  }
   const warningCount = extEntries.filter(e => e.score >= settings.alertThreshold).length;
 
-  document.getElementById('kpi-active').textContent = activeCount;
-  document.getElementById('kpi-traffic').textContent = formatBytes(totalBytes);
+  document.getElementById('kpi-active').textContent = totalCpu.toFixed(1) + '%';
+  document.getElementById('kpi-traffic').textContent = formatBytes(totalMemory);
   document.getElementById('kpi-warnings').textContent = warningCount;
 
   const dot = document.getElementById('status-dot');
@@ -84,7 +87,9 @@ function buildExtensionEntries(activity, extensions, settings) {
     const totalRequests = act ? act.buckets.reduce((s, b) => s + b.requests, 0) : 0;
     const totalBytes = act ? act.buckets.reduce((s, b) => s + b.bytesTransferred, 0) : 0;
     const score = act?.score || 0;
-    entries.push({ id: extId, name: ext.name, version: ext.version, enabled: ext.enabled, icons: ext.icons, totalRequests, totalBytes, score });
+    const cpu = act?.cpu || 0;
+    const memory = act?.memory || 0;
+    entries.push({ id: extId, name: ext.name, version: ext.version, enabled: ext.enabled, icons: ext.icons, totalRequests, totalBytes, score, cpu, memory });
   }
   entries.sort((a, b) => b.score - a.score);
   return entries;

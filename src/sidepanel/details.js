@@ -14,8 +14,7 @@ function renderDetailsList(entries, settings) {
     filtered = entries.filter(e => e.name.toLowerCase().includes(q));
   }
 
-  if (currentSort === 'traffic') filtered.sort((a, b) => b.totalBytes - a.totalBytes);
-  else if (currentSort === 'requests') filtered.sort((a, b) => b.totalRequests - a.totalRequests);
+  if (currentSort === 'traffic') filtered.sort((a, b) => (b.memory || 0) - (a.memory || 0));
   else filtered.sort((a, b) => b.score - a.score);
 
   const ignoreList = settings?.ignoreList || [];
@@ -55,6 +54,18 @@ function renderDetailsList(entries, settings) {
           <span class="ext-score-badge" style="color:${color};background:${bgColor}" title="${escapeAttr(t('scoreTooltip'))}">${entry.score}</span>
         </div>
         <div class="ext-card-body">
+          <div class="ext-detail-row">
+            <span class="ext-detail-label">CPU</span>
+            <span class="ext-detail-value">${(entry.cpu || 0).toFixed(1)}%</span>
+          </div>
+          <div class="ext-detail-row">
+            <span class="ext-detail-label">Memory</span>
+            <span class="ext-detail-value">${formatBytes(entry.memory || 0)}</span>
+          </div>
+          <div class="ext-detail-row">
+            <span class="ext-detail-label">JS Heap</span>
+            <span class="ext-detail-value">${formatBytes(entry.jsMemory || 0)}</span>
+          </div>
           <div class="ext-detail-row">
             <span class="ext-detail-label">${escapeHtml(t('detailRequests'))}</span>
             <span class="ext-detail-value">${formatNumber(entry.totalRequests)}</span>

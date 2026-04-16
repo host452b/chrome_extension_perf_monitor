@@ -10,27 +10,42 @@ describe('normalizeValue', () => {
 });
 
 describe('calculateScore', () => {
-  it('returns 0 for extension with no activity and no permissions', () => {
+  it('returns 0 for extension with no activity, no permissions, no process', () => {
     const meta = { permissions: [], contentScriptPatterns: [] };
     const activity = { totalRequests: 0, totalBytes: 0 };
     assert.equal(calculateScore(meta, activity), 0);
   });
 
-  it('returns high score for extension with heavy activity and broad permissions', () => {
+  it('returns higher score when CPU/memory data is provided', () => {
+    const meta = { permissions: ['storage'], contentScriptPatterns: [] };
+    const activity = { totalRequests: 0, totalBytes: 0 };
+    const scoreWithout = calculateScore(meta, activity);
+    const scoreWith = calculateScore(meta, activity, { cpu: 10, memory: 50 * 1024 * 1024 });
+    assert.ok(scoreWith > scoreWithout, `With process ${scoreWith} should > without ${scoreWithout}`);
+  });
+
+  it('CPU-heavy extension gets high score', () => {
+    const meta = { permissions: [], contentScriptPatterns: [] };
+    const activity = { totalRequests: 0, totalBytes: 0 };
+    const score = calculateScore(meta, activity, { cpu: 30, memory: 100 * 1024 * 1024 });
+    assert.ok(score >= 40, `CPU-heavy score ${score} should be >= 40`);
+  });
+
+  it('returns high score for broad permissions + heavy process', () => {
     const meta = {
       permissions: ['<all_urls>', 'tabs', 'webRequest', 'cookies', 'history'],
       contentScriptPatterns: ['<all_urls>'],
     };
     const activity = { totalRequests: 5000, totalBytes: 50 * 1024 * 1024 };
-    const score = calculateScore(meta, activity);
+    const score = calculateScore(meta, activity, { cpu: 20, memory: 150 * 1024 * 1024 });
     assert.ok(score >= 70, `Expected >= 70, got ${score}`);
   });
 
-  it('returns low score for extension with minimal activity', () => {
+  it('returns low score for extension with minimal everything', () => {
     const meta = { permissions: ['storage'], contentScriptPatterns: [] };
     const activity = { totalRequests: 5, totalBytes: 1024 };
     const score = calculateScore(meta, activity);
-    assert.ok(score < 30, `Expected < 30, got ${score}`);
+    assert.ok(score < 15, `Expected < 15, got ${score}`);
   });
 
   it('sensitive permissions increase score vs non-sensitive', () => {
@@ -53,7 +68,7 @@ describe('calculateScore', () => {
       contentScriptPatterns: ['<all_urls>', 'http://*/*', 'https://*/*'],
     };
     const activity = { totalRequests: 999999, totalBytes: 999999999 };
-    const score = calculateScore(meta, activity);
+    const score = calculateScore(meta, activity, { cpu: 100, memory: 500 * 1024 * 1024 });
     assert.ok(score >= 0 && score <= 100, `Score ${score} out of range`);
   });
 });
