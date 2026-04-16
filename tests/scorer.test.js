@@ -1,75 +1,77 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { calculateScore, normalizeValue } = require('../src/background/scorer.js');
+const { calculateScore, normalizeValue, calculatePermissionRisk, calculateScopeScore } = require('../src/background/scorer.js');
 
 describe('normalizeValue', () => {
-  it('returns 0 for 0 value', () => assert.equal(normalizeValue(0, 100), 0));
-  it('returns 100 for value at max', () => assert.equal(normalizeValue(100, 100), 100));
-  it('caps at 100 for value above max', () => assert.equal(normalizeValue(200, 100), 100));
-  it('returns proportional value', () => assert.equal(normalizeValue(50, 100), 50));
+  it('returns 0 for 0', () => assert.equal(normalizeValue(0, 100), 0));
+  it('returns 100 at max', () => assert.equal(normalizeValue(100, 100), 100));
+  it('caps at 100', () => assert.equal(normalizeValue(200, 100), 100));
+  it('proportional', () => assert.equal(normalizeValue(50, 100), 50));
+});
+
+describe('calculatePermissionRisk', () => {
+  it('sensitive perms score 2 each', () => {
+    assert.equal(calculatePermissionRisk(['<all_urls>', 'cookies']), 4);
+  });
+  it('normal perms score 0.5 each', () => {
+    assert.equal(calculatePermissionRisk(['storage', 'alarms']), 1);
+  });
+  it('mixed', () => {
+    assert.equal(calculatePermissionRisk(['<all_urls>', 'storage']), 2.5);
+  });
+  it('empty', () => {
+    assert.equal(calculatePermissionRisk([]), 0);
+  });
+});
+
+describe('calculateScopeScore', () => {
+  it('no patterns = 0', () => assert.equal(calculateScopeScore([]), 0));
+  it('<all_urls> = max', () => assert.equal(calculateScopeScore(['<all_urls>']), 5));
+  it('specific patterns = count capped at 5', () => {
+    assert.equal(calculateScopeScore(['https://a.com/*', 'https://b.com/*']), 2);
+  });
 });
 
 describe('calculateScore', () => {
-  it('returns 0 for no activity and no permissions', () => {
-    assert.equal(calculateScore({ permissions: [], contentScriptPatterns: [] }, { totalRequests: 0, totalBytes: 0 }), 0);
+  it('returns 0 for no permissions and no scope', () => {
+    assert.equal(calculateScore({ permissions: [], contentScriptPatterns: [] }), 0);
   });
 
-  it('returns high score for heavy activity + broad permissions', () => {
-    const meta = { permissions: ['<all_urls>', 'tabs', 'webRequest', 'cookies', 'history'], contentScriptPatterns: ['<all_urls>'] };
-    const score = calculateScore(meta, { totalRequests: 5000, totalBytes: 50 * 1024 * 1024 });
-    assert.ok(score >= 70, `Expected >= 70, got ${score}`);
+  it('high score for broad permissions + all_urls scope', () => {
+    const score = calculateScore({
+      permissions: ['<all_urls>', 'tabs', 'webRequest', 'cookies', 'history'],
+      contentScriptPatterns: ['<all_urls>'],
+    });
+    assert.ok(score >= 60, `Expected >= 60, got ${score}`);
   });
 
-  it('returns low score for minimal activity', () => {
-    const score = calculateScore({ permissions: ['storage'], contentScriptPatterns: [] }, { totalRequests: 5, totalBytes: 1024 });
-    assert.ok(score < 20, `Expected < 20, got ${score}`);
+  it('low score for minimal permissions', () => {
+    const score = calculateScore({ permissions: ['storage'], contentScriptPatterns: [] });
+    assert.ok(score < 10, `Expected < 10, got ${score}`);
   });
 
-  it('sensitive permissions increase score', () => {
-    const activity = { totalRequests: 100, totalBytes: 10240 };
-    const s1 = calculateScore({ permissions: ['<all_urls>', 'tabs', 'cookies'], contentScriptPatterns: [] }, activity);
-    const s2 = calculateScore({ permissions: ['storage', 'alarms', 'notifications'], contentScriptPatterns: [] }, activity);
+  it('sensitive perms increase score', () => {
+    const s1 = calculateScore({ permissions: ['<all_urls>', 'tabs', 'cookies'], contentScriptPatterns: [] });
+    const s2 = calculateScore({ permissions: ['storage', 'alarms'], contentScriptPatterns: [] });
     assert.ok(s1 > s2, `${s1} should > ${s2}`);
   });
 
-  it('broad content scripts increase score', () => {
-    const activity = { totalRequests: 100, totalBytes: 10240 };
-    const broad = calculateScore({ permissions: ['storage'], contentScriptPatterns: ['<all_urls>'] }, activity);
-    const narrow = calculateScore({ permissions: ['storage'], contentScriptPatterns: ['https://example.com/*'] }, activity);
-    assert.ok(broad > narrow, `${broad} should > ${narrow}`);
+  it('broad scope increases score', () => {
+    const s1 = calculateScore({ permissions: [], contentScriptPatterns: ['<all_urls>'] });
+    const s2 = calculateScore({ permissions: [], contentScriptPatterns: ['https://example.com/*'] });
+    assert.ok(s1 > s2, `${s1} should > ${s2}`);
   });
 
   it('score always 0-100', () => {
-    const meta = { permissions: ['<all_urls>', 'tabs', 'webRequest', 'cookies', 'history', 'bookmarks', 'debugger'], contentScriptPatterns: ['<all_urls>'] };
-    const score = calculateScore(meta, { totalRequests: 999999, totalBytes: 999999999 });
+    const score = calculateScore({
+      permissions: ['<all_urls>', 'tabs', 'webRequest', 'cookies', 'history', 'bookmarks', 'debugger'],
+      contentScriptPatterns: ['<all_urls>'],
+    });
     assert.ok(score >= 0 && score <= 100);
   });
 
-  it('permissions-only score is non-zero even without network activity', () => {
-    const meta = { permissions: ['<all_urls>', 'tabs', 'webRequest', 'cookies'], contentScriptPatterns: ['<all_urls>'] };
-    const score = calculateScore(meta, { totalRequests: 0, totalBytes: 0 });
-    assert.ok(score > 0, `Permissions-only score should be > 0, got ${score}`);
-  });
-
-  it('score with process data is higher than without', () => {
-    const meta = { permissions: ['storage'], contentScriptPatterns: [] };
-    const activity = { totalRequests: 100, totalBytes: 10000 };
-    const without = calculateScore(meta, activity);
-    const withProc = calculateScore(meta, activity, { cpu: 10, rss: 80 * 1024 * 1024 });
-    assert.ok(withProc > without, `${withProc} should > ${without}`);
-  });
-
-  it('high CPU produces high score even with few permissions', () => {
-    const meta = { permissions: [], contentScriptPatterns: [] };
-    const activity = { totalRequests: 0, totalBytes: 0 };
-    const score = calculateScore(meta, activity, { cpu: 25, rss: 200 * 1024 * 1024 });
-    assert.ok(score >= 40, `CPU-heavy score ${score} should >= 40`);
-  });
-
-  it('without process data falls back to permission-based scoring', () => {
-    const meta = { permissions: ['<all_urls>', 'tabs', 'cookies'], contentScriptPatterns: ['<all_urls>'] };
-    const activity = { totalRequests: 0, totalBytes: 0 };
-    const score = calculateScore(meta, activity);
-    assert.ok(score > 0, `Permissions-only score should be > 0, got ${score}`);
+  it('score is deterministic — same input = same output', () => {
+    const meta = { permissions: ['tabs', 'cookies'], contentScriptPatterns: ['https://example.com/*'] };
+    assert.equal(calculateScore(meta), calculateScore(meta));
   });
 });

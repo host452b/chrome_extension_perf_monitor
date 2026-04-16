@@ -91,12 +91,6 @@ body {
   text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
 }
 
-/* Chart */
-.chart-container {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px; margin-bottom: 14px;
-}
-
 /* Toolbar */
 .toolbar { display: flex; gap: 6px; margin-bottom: 10px; }
 
@@ -222,37 +216,20 @@ body {
 
 .empty-state { text-align: center; color: var(--fg-dim); padding: 24px 12px; font-size: 11px; line-height: 1.6; }
 
-.native-status {
-  font-size: 9px; color: var(--fg-dim); text-align: center;
-  padding: 4px 0; margin-bottom: 8px; letter-spacing: 0.02em;
+/* About section */
+.about-section { padding: 4px 0; }
+.about-text {
+  font-size: 11px; color: var(--fg-dim); line-height: 1.6;
 }
-.native-status.connected { color: var(--accent); }
+.about-text strong { color: var(--fg); font-weight: 500; }
+.about-text code {
+  font-family: var(--font-mono); font-size: 9px;
+  background: var(--surface); padding: 1px 4px; border-radius: 3px;
+}
+.about-text ul { list-style: none; padding-left: 0; }
+.about-text li::before { content: '·'; color: var(--accent); margin-right: 6px; }
+.about-text p + p { margin-top: 6px; }
 
-.native-setup {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px;
-  text-align: center;
-}
-.native-setup-text {
-  font-size: 10px; color: var(--fg-dim); margin-bottom: 8px; line-height: 1.4;
-}
-.native-setup-btn {
-  padding: 5px 14px; background: transparent; border: 1px solid var(--accent);
-  border-radius: var(--radius); color: var(--accent); font-family: var(--font-sans);
-  font-size: 10px; font-weight: 500; cursor: pointer; transition: background 0.12s;
-}
-.native-setup-btn:hover { background: #34D39910; }
-.native-setup-cmd {
-  margin-top: 8px; background: var(--bg); border-radius: 4px; padding: 8px;
-  text-align: left; overflow-x: auto;
-}
-.native-setup-cmd code {
-  font-family: var(--font-mono); font-size: 9px; color: var(--accent);
-  word-break: break-all; line-height: 1.5;
-}
-.native-setup-hint {
-  font-size: 9px; color: var(--fg-dim); margin-top: 6px; text-align: center;
-}
 .hidden { display: none; }
 
 /* Focus — subtle ring */
