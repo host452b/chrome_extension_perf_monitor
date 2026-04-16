@@ -81,8 +81,9 @@ const _strings = {
 
     kpiCpu: 'CPU',
     kpiMemory: 'MEM',
-    nativeConnected: 'Native host connected — real CPU/memory data',
-    nativeNotConnected: 'Want real CPU/memory data? One command to enable:',
+    nativeConnected: 'Measured — native host connected',
+    nativeNotConnected: 'Install native host for precise data',
+    estimateMode: '~Estimated from network, permissions & tab coverage',
     copyInstallCmd: 'Copy Install Command',
     copied: 'Copied!',
     pasteInTerminal: 'Paste in Terminal, then restart Chrome',
@@ -156,8 +157,9 @@ const _strings = {
 
     kpiCpu: 'CPU',
     kpiMemory: '内存',
-    nativeConnected: '本地采集器已连接 — 显示真实 CPU/内存',
-    nativeNotConnected: '想要真实 CPU/内存数据？一条命令即可开启：',
+    nativeConnected: '精确模式 — 本地采集器已连接',
+    nativeNotConnected: '安装本地采集器以获取精确数据',
+    estimateMode: '~基于网络活动、权限和 Tab 覆盖率估算',
     copyInstallCmd: '复制安装命令',
     copied: '已复制！',
     pasteInTerminal: '粘贴到终端执行，然后重启 Chrome',
