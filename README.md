@@ -35,6 +35,30 @@ A Chrome extension that monitors all installed extensions' network activity, cal
 
 - Chrome 116+ (required for `chrome.sidePanel` API)
 
+### Enable CPU/Memory Monitoring (Optional)
+
+The extension works out of the box with network + permission analysis. For **real CPU% and memory (RSS)** per extension, install the native host:
+
+1. Find your extension ID at `chrome://extensions/` (enable Developer mode)
+2. Run the installer:
+   ```bash
+   cd native-host
+   ./install.sh <your-extension-id>
+   ```
+3. Restart Chrome
+
+The side panel will show "Native host connected" when active.
+
+**How it works:** A small Python script reads `ps` output to find Chrome extension renderer processes, matches them to extension IDs via command-line flags, and reports CPU% + RSS back to the extension.
+
+**Uninstall:**
+```bash
+# macOS
+rm ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/com.perfmonitor.host.json
+# Linux
+rm ~/.config/google-chrome/NativeMessagingHosts/com.perfmonitor.host.json
+```
+
 ## Usage
 
 1. **Click the toolbar icon** → popup shows KPI summary and top 5 extensions
@@ -84,6 +108,7 @@ Side Panel (chrome.sidePanel API)
 | `storage` | Store aggregated activity data locally |
 | `sidePanel` | Render the full dashboard |
 | `alarms` | Periodic data aggregation (2-min + 15-min) |
+| `nativeMessaging` | Communicate with local process sampler for CPU/memory data |
 
 ## Development
 
