@@ -1,9 +1,0 @@
-{
-  "name": "com.perfmonitor.host",
-  "description": "Extension Perf Monitor — native process sampler",
-  "path": "PLACEHOLDER_PATH",
-  "type": "stdio",
-  "allowed_origins": [
-    "PLACEHOLDER_ORIGIN"
-  ]
-}
