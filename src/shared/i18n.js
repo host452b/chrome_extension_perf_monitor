@@ -32,7 +32,7 @@ const _strings = {
     scoreLow: 'Low Impact',
     scoreMedium: 'Moderate Impact',
     scoreHigh: 'High Impact',
-    scoreTooltip: 'Impact Score: higher = more network use + broader permissions',
+    scoreTooltip: 'Impact Score: higher = more CPU/memory use + broader permissions',
 
     // Details
     searchPlaceholder: 'Search extensions...',
@@ -71,7 +71,8 @@ const _strings = {
     // Popup
     topImpact: 'Highest Impact',
     openPanel: 'Open Full Dashboard',
-    collecting: 'Monitoring your extensions — data appears as they make network requests',
+    collecting: 'Monitoring extensions — CPU & memory data refreshes every 30s',
+    debuggerNote: 'A brief "debugging" banner may flash as we sample each extension',
 
     // Retention options
     retention1h: '1 hour',
@@ -102,7 +103,7 @@ const _strings = {
     scoreLow: '影响较低',
     scoreMedium: '影响中等',
     scoreHigh: '影响较高',
-    scoreTooltip: '影响度评分：越高 = 网络请求越多 + 权限越广',
+    scoreTooltip: '影响度评分：越高 = CPU/内存占用越多 + 权限越广',
 
     searchPlaceholder: '搜索扩展...',
     sortScore: '影响度',
@@ -138,7 +139,8 @@ const _strings = {
 
     topImpact: '影响度最高',
     openPanel: '打开完整面板',
-    collecting: '正在监控你的扩展 — 当扩展发出网络请求时数据会自动出现',
+    collecting: '正在监控扩展 — CPU 和内存数据每 30 秒刷新',
+    debuggerNote: '采样时浏览器顶部会短暂闪现调试横幅',
 
     retention1h: '1 小时',
     retention6h: '6 小时',

@@ -9,7 +9,7 @@
     "sidePanel",
     "webRequest",
     "alarms",
-    "processes"
+    "debugger"
   ],
   "host_permissions": [
     "<all_urls>"
