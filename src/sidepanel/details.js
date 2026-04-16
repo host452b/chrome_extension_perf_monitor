@@ -54,6 +54,16 @@ function renderDetailsList(entries, settings) {
           <span class="ext-score-badge" style="color:${color};background:${bgColor}" title="${escapeAttr(t('scoreTooltip'))}">${entry.score}</span>
         </div>
         <div class="ext-card-body">
+          ${(entry.cpu > 0 || entry.rss > 0) ? `
+          <div class="ext-detail-row">
+            <span class="ext-detail-label">CPU</span>
+            <span class="ext-detail-value">${(entry.cpu || 0).toFixed(1)}%</span>
+          </div>
+          <div class="ext-detail-row">
+            <span class="ext-detail-label">Memory</span>
+            <span class="ext-detail-value">${formatBytes(entry.rss || 0)}</span>
+          </div>
+          ` : ''}
           <div class="ext-detail-row">
             <span class="ext-detail-label">${escapeHtml(t('detailRequests'))}</span>
             <span class="ext-detail-value">${formatNumber(entry.totalRequests)}</span>

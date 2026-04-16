@@ -222,6 +222,12 @@ body {
 
 .empty-state { text-align: center; color: var(--fg-dim); padding: 24px 12px; font-size: 11px; line-height: 1.6; }
 
+.native-status {
+  font-size: 9px; color: var(--fg-dim); text-align: center;
+  padding: 4px 0; margin-bottom: 8px; letter-spacing: 0.02em;
+}
+.native-status.connected { color: var(--accent); }
+
 /* Focus — subtle ring */
 *:focus-visible { outline: 1.5px solid var(--accent); outline-offset: 1px; }
 .search-input:focus-visible { outline: none; border-color: var(--accent); }

@@ -13,23 +13,33 @@ function renderKpiCard(id, value, label, format) {
 
 function renderOverviewSection(data) {
   const entries = buildSortedEntries(data.activity, data.extensions);
-  const totalRequests = sumField(entries, 'totalRequests');
-  const totalBytes = sumField(entries, 'totalBytes');
   const warningCount = countWarnings(entries, data.settings.alertThreshold);
 
-  return `
-    <div class="kpi-row">
+  let kpiHtml;
+  if (data.nativeConnected) {
+    let totalCpu = 0, totalMem = 0;
+    for (const e of entries) { totalCpu += e.cpu || 0; totalMem += e.rss || 0; }
+    kpiHtml = `
+      ${renderKpiCard('kpi-cpu', totalCpu.toFixed(1) + '%', t('kpiCpu') || 'CPU', null)}
+      ${renderKpiCard('kpi-mem', totalMem, t('kpiMemory') || 'MEM', 'bytes')}
       ${renderKpiCard('kpi-active', countActiveExtensions(data.extensions), t('kpiActive'), null)}
-      ${renderKpiCard('kpi-requests', totalRequests, t('kpiRequests'), 'number')}
-      ${renderKpiCard('kpi-traffic', totalBytes, t('kpiTraffic'), 'bytes')}
       ${renderKpiCard('kpi-warnings', warningCount, t('kpiWarnings'), null)}
-    </div>
+    `;
+  } else {
+    kpiHtml = `
+      ${renderKpiCard('kpi-active', countActiveExtensions(data.extensions), t('kpiActive'), null)}
+      ${renderKpiCard('kpi-requests', sumField(entries, 'totalRequests'), t('kpiRequests'), 'number')}
+      ${renderKpiCard('kpi-traffic', sumField(entries, 'totalBytes'), t('kpiTraffic'), 'bytes')}
+      ${renderKpiCard('kpi-warnings', warningCount, t('kpiWarnings'), null)}
+    `;
+  }
 
+  return `
+    <div class="kpi-row">${kpiHtml}</div>
     <div class="section-title">${escapeHtml(t('networkActivity'))}</div>
     <div class="chart-container">
       <canvas id="activity-chart" height="120"></canvas>
     </div>
-
     <div class="section-title">${escapeHtml(t('consumptionByExt'))}</div>
     <div id="consumption-bars"></div>
   `;
@@ -111,22 +121,41 @@ function renderConsumptionBars(entries) {
   const container = document.getElementById('consumption-bars');
   if (!container) return;
 
-  const totalBytes = entries.reduce((s, e) => s + e.totalBytes, 0);
-  if (totalBytes === 0 && entries.every(e => e.totalRequests === 0)) {
-    container.innerHTML = `<div class="empty-state">${escapeHtml(t('noTraffic'))}</div>`;
+  const hasProcessData = entries.some(e => (e.rss || 0) > 0);
+
+  if (hasProcessData) {
+    const sorted = entries.slice().sort((a, b) => (b.rss || 0) - (a.rss || 0));
+    const maxRss = Math.max(...sorted.map(e => e.rss || 0), 1);
+    container.innerHTML = sorted.slice(0, 10).map(entry => {
+      const pct = ((entry.rss || 0) / maxRss) * 100;
+      const color = getScoreColor(entry.score);
+      return `
+        <div class="bar-item">
+          <span class="bar-label">${escapeHtml(entry.name)}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
+          </div>
+          <span class="bar-value" title="CPU: ${(entry.cpu || 0).toFixed(1)}%">${formatBytes(entry.rss || 0)}</span>
+        </div>`;
+    }).join('');
     return;
   }
 
-  // Sort by score (combines network + permissions)
+  // Fallback: network/permission based
+  const totalBytes = entries.reduce((s, e) => s + e.totalBytes, 0);
+  if (totalBytes === 0 && entries.every(e => e.totalRequests === 0)) {
+    container.innerHTML = '<div class="empty-state">' + escapeHtml(t('noTraffic')) + '</div>';
+    return;
+  }
+
   const sorted = entries.slice().sort((a, b) => b.score - a.score);
   const maxScore = Math.max(...sorted.map(e => e.score), 1);
-
   container.innerHTML = sorted.slice(0, 10).map(entry => {
     const pct = (entry.score / maxScore) * 100;
     const color = getScoreColor(entry.score);
     const detail = entry.totalRequests > 0
-      ? `${formatNumber(entry.totalRequests)} req · ${formatBytes(entry.totalBytes)}`
-      : `${entry.permissions.length} perms`;
+      ? formatNumber(entry.totalRequests) + ' req'
+      : entry.permissions.length + ' perms';
     return `
       <div class="bar-item">
         <span class="bar-label">${escapeHtml(entry.name)}</span>
@@ -155,6 +184,8 @@ function buildSortedEntries(activity, extensions) {
       totalRequests, totalBytes,
       score: act?.score || 0,
       buckets: act?.buckets || [],
+      cpu: act?.cpu || 0,
+      rss: act?.rss || 0,
     });
   }
   entries.sort((a, b) => b.score - a.score);
