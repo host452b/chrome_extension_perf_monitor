@@ -8,8 +8,7 @@
     "storage",
     "sidePanel",
     "webRequest",
-    "alarms",
-    "debugger"
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"

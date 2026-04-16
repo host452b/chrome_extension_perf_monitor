@@ -74,10 +74,7 @@ describe('Integration: Full data pipeline', () => {
     assert.ok(heavyScore > lightScore, `Heavy ${heavyScore} should > light ${lightScore}`);
     assert.ok(heavyScore >= 10, `Heavy score ${heavyScore} should be non-trivial`);
 
-    // With process data, scores should be higher
-    const heavyWithProcess = calculateScore(heavyMeta, { totalRequests: 50, totalBytes: 50 * 10240 },
-      { cpu: 15, memory: 80 * 1024 * 1024 });
-    assert.ok(heavyWithProcess > heavyScore, `With CPU/mem ${heavyWithProcess} > without ${heavyScore}`);
+    assert.ok(lightScore >= 0, 'Light score should be non-negative');
   });
 
   it('collector ignores own extension and non-extension requests', () => {

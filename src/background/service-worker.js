@@ -3,13 +3,11 @@ importScripts(
   '../shared/utils.js',
   '../shared/storage.js',
   './collector.js',
-  './process-collector.js',
   './aggregator.js',
   './scorer.js'
 );
 
 const collector = new Collector(chrome.runtime.id);
-const processCollector = new ProcessCollector(chrome.runtime.id);
 
 // --- Network request listener ---
 chrome.webRequest.onCompleted.addListener(
@@ -18,33 +16,19 @@ chrome.webRequest.onCompleted.addListener(
   ['responseHeaders']
 );
 
-// --- Periodic tasks ---
-chrome.alarms.create('poll-processes', { periodInMinutes: 0.5 }); // every 30s
+// --- Periodic aggregation ---
 chrome.alarms.create('aggregate', { periodInMinutes: 15 });
 chrome.alarms.create('mini-flush', { periodInMinutes: 2 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'poll-processes') {
-    await pollProcesses();
-  }
   if (alarm.name === 'aggregate' || alarm.name === 'mini-flush') {
     await flushAndPrune();
   }
 });
 
-async function pollProcesses() {
-  const extensions = await getExtensions();
-  processCollector.setExtensionMap(extensions);
-  await processCollector.poll();
-}
-
-// Initial poll
-pollProcesses().catch(e => console.error('[PerfMon] initial process poll failed:', e));
-
 async function flushAndPrune() {
   const snapshot = collector.getSnapshot();
   collector.reset();
-
   if (Object.keys(snapshot).length === 0) return;
 
   const now = Date.now();
@@ -78,7 +62,6 @@ async function syncExtensionMetadata() {
       name: ext.name,
       version: ext.version,
       enabled: ext.enabled,
-      icons: ext.icons || [],
       permissions: ext.permissions || [],
       hostPermissions: ext.hostPermissions || [],
       contentScriptPatterns,
@@ -86,7 +69,6 @@ async function syncExtensionMetadata() {
   }
 
   await saveExtensions(extensions);
-  processCollector.setExtensionMap(extensions);
 }
 
 syncExtensionMetadata().catch(e => console.error('[PerfMon] syncExtensionMetadata failed:', e));
@@ -101,24 +83,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_LIVE_SNAPSHOT') {
     (async () => {
       try {
-        // Poll processes fresh for this request
-        await pollProcesses();
-
-        const netSnapshot = collector.getSnapshot();
-        const processData = processCollector.getLatest();
-        const processHistory = processCollector.getAllHistory();
+        const snapshot = collector.getSnapshot();
         const stored = await getAllData();
         const now = Date.now();
         const activity = {};
 
-        // Copy stored network buckets
+        // Copy stored buckets
         for (const [extId, data] of Object.entries(stored.activity)) {
           activity[extId] = { buckets: [...data.buckets], score: data.score || 0 };
         }
 
-        // Merge live network snapshot
-        if (Object.keys(netSnapshot).length > 0) {
-          for (const [extId, entry] of Object.entries(netSnapshot)) {
+        // Merge live snapshot
+        if (Object.keys(snapshot).length > 0) {
+          for (const [extId, entry] of Object.entries(snapshot)) {
             if (!activity[extId]) activity[extId] = { buckets: [], score: 0 };
             activity[extId].buckets = activity[extId].buckets.filter(b => b._live !== true);
             activity[extId].buckets.push({
@@ -132,35 +109,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
         }
 
-        // Calculate scores for ALL extensions with CPU/memory data
+        // Calculate scores for ALL extensions
         for (const [extId, meta] of Object.entries(stored.extensions)) {
           if (!activity[extId]) activity[extId] = { buckets: [], score: 0 };
           const totalRequests = activity[extId].buckets.reduce((s, b) => s + b.requests, 0);
           const totalBytes = activity[extId].buckets.reduce((s, b) => s + b.bytesTransferred, 0);
-          const proc = processData[extId] || null;
           activity[extId].score = calculateScore(
             { permissions: meta.permissions || [], contentScriptPatterns: meta.contentScriptPatterns || [] },
-            { totalRequests, totalBytes },
-            proc
+            { totalRequests, totalBytes }
           );
-          // Attach process data to activity for UI
-          if (proc) {
-            activity[extId].cpu = proc.cpu;
-            activity[extId].memory = proc.memory;
-            activity[extId].jsMemory = proc.jsMemory;
-          }
         }
 
         sendResponse({
           activity,
           extensions: stored.extensions,
           settings: stored.settings,
-          processAvailable: processCollector.isAvailable,
-          processHistory,
         });
       } catch (e) {
         console.error('[PerfMon] GET_LIVE_SNAPSHOT failed:', e);
-        sendResponse({ activity: {}, extensions: {}, settings: _DEFAULTS, processAvailable: false, processHistory: {} });
+        sendResponse({ activity: {}, extensions: {}, settings: _DEFAULTS });
       }
     })();
     return true;

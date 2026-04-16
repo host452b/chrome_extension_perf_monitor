@@ -50,7 +50,7 @@ function renderAll() {
     <div id="details-list"></div>
   `;
 
-  renderCpuChart(currentData.processHistory || {});
+  renderActivityChart(currentData.activity);
   renderConsumptionBars(entries);
 
   // Wire search + sort
