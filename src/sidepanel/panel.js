@@ -49,6 +49,11 @@ function renderAll() {
 
     <div class="section-divider"></div>
 
+    <div class="section-title">${escapeHtml(t('tabMonitor'))}</div>
+    <div id="tab-section"></div>
+
+    <div class="section-divider"></div>
+
     <div class="about-section">
       <div class="section-title">${escapeHtml(t('aboutTitle'))}</div>
       <div class="about-text">${t('aboutBody')}</div>
@@ -59,6 +64,9 @@ function renderAll() {
   wireToolbar(entries);
   renderDetailsList(entries, currentData.settings);
   saveSnapshot(entries);
+
+  // Load tab data
+  loadTabData((tabs) => renderTabSection(tabs));
 }
 
 /** Incremental update — detect changes and animate only what changed */
@@ -129,6 +137,9 @@ function updateDynamic() {
   updateKpi('kpi-warnings', entries.filter(e => e.score >= (currentData.settings.alertThreshold || 70)).length);
 
   saveSnapshot(entries);
+
+  // Refresh tab data
+  loadTabData((tabs) => renderTabSection(tabs));
 }
 
 function updateKpi(id, newValue) {

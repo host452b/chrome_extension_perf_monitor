@@ -57,6 +57,13 @@ const _strings = {
     retention6h: '—',
     retention24h: '—',
 
+    tabMonitor: 'Tab Resources',
+    tabsOpen: 'Tabs',
+    tabsHeavy: 'Heavy',
+    tabsByMemory: 'Tabs by JS Heap',
+    closeTab: 'Close this tab',
+    noTabs: 'No tabs detected',
+
     aboutTitle: 'How This Works',
     aboutBody: `<p>This tool audits your extensions using <strong>static analysis only</strong> — it reads each extension's declared permissions and content script patterns from their manifest.</p>
 <p style="margin-top:6px"><strong>Risk Score (0–100)</strong> is computed from two factors:</p>
@@ -65,7 +72,8 @@ const _strings = {
 <li><strong>Content script scope (40%)</strong> — extensions that inject into all websites score highest; narrow patterns score lower; none scores 0</li>
 </ul>
 <p style="margin-top:6px">Scores are <strong>deterministic</strong> — they only change when an extension updates its permissions. No estimation, no sampling, no guesswork.</p>
-<p style="margin-top:6px;color:var(--fg-dim)">Chrome does not expose per-extension CPU or memory to other extensions. This tool provides the most reliable analysis possible within Chrome's security model.</p>`,
+<p style="margin-top:6px"><strong>Tab Resources</strong> reads each tab's <code>performance.memory</code> (JS heap) and DOM node count via <code>chrome.scripting</code>. This is <strong>real measured data</strong>, not an estimate.</p>
+<p style="margin-top:6px;color:var(--fg-dim)">Chrome does not expose per-extension CPU or memory to other extensions, but per-tab JS heap is directly readable.</p>`,
   },
   zh: {
     appName: '扩展审计',
@@ -123,6 +131,13 @@ const _strings = {
     retention6h: '—',
     retention24h: '—',
 
+    tabMonitor: 'Tab 资源监控',
+    tabsOpen: '标签页',
+    tabsHeavy: '高占用',
+    tabsByMemory: '按 JS Heap 排序',
+    closeTab: '关闭此标签页',
+    noTabs: '未检测到标签页',
+
     aboutTitle: '工作原理',
     aboutBody: `<p>本工具通过<strong>静态分析</strong>审计你的扩展 — 读取每个扩展在 manifest 中声明的权限和内容脚本模式。</p>
 <p style="margin-top:6px"><strong>风险评分 (0–100)</strong> 由两个因素计算：</p>
@@ -131,7 +146,8 @@ const _strings = {
 <li><strong>内容脚本范围 (40%)</strong> — 注入所有网站的得分最高；窄匹配较低；无注入为 0</li>
 </ul>
 <p style="margin-top:6px">评分是<strong>确定性的</strong> — 只有扩展更新权限时才会变化。没有估算、没有采样、没有猜测。</p>
-<p style="margin-top:6px;color:var(--fg-dim)">Chrome 不允许扩展读取其他扩展的 CPU 或内存数据。本工具在 Chrome 安全模型允许范围内提供最可靠的分析。</p>`,
+<p style="margin-top:6px"><strong>Tab 资源监控</strong>通过 <code>chrome.scripting</code> 读取每个标签页的 <code>performance.memory</code>（JS 堆大小）和 DOM 节点数。这是<strong>真实测量数据</strong>，不是估算。</p>
+<p style="margin-top:6px;color:var(--fg-dim)">Chrome 不允许扩展读取其他扩展的 CPU/内存，但每个标签页的 JS heap 可以直接读取。</p>`,
   },
 };
 
