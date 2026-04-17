@@ -1,12 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Extension Audit",
-  "version": "2.0.0",
-  "description": "Audit Chrome extensions by permissions, content script scope, and risk score. Know which ones deserve to stay.",
+  "version": "2.1.0",
+  "description": "Audit Chrome extensions by permissions and risk score. Monitor tab resource usage. Know what deserves to stay.",
   "permissions": [
     "management",
     "storage",
-    "sidePanel"
+    "sidePanel",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js"

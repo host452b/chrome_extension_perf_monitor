@@ -22,11 +22,9 @@ async function syncExtensionMetadata() {
       }
     }
 
-    // Count sensitive permissions
     const allPerms = [...(ext.permissions || []), ...(ext.hostPermissions || [])];
     const sensitiveCount = allPerms.filter(p => SENSITIVE_PERMISSIONS.includes(p)).length;
 
-    // Determine scope label
     let scopeLabel = 'none';
     if (contentScriptPatterns.length > 0) {
       const hasBroad = contentScriptPatterns.some(p =>
@@ -63,6 +61,70 @@ chrome.management.onUninstalled.addListener(syncExtensionMetadata);
 chrome.management.onEnabled.addListener(syncExtensionMetadata);
 chrome.management.onDisabled.addListener(syncExtensionMetadata);
 
+// --- Tab resource probing ---
+async function probeAllTabs() {
+  const tabs = await chrome.tabs.query({});
+  const results = [];
+
+  for (const tab of tabs) {
+    // Skip non-injectable tabs
+    if (!tab.url || !tab.url.match(/^https?:\/\//)) {
+      results.push({
+        id: tab.id,
+        title: tab.title || '(untitled)',
+        url: tab.url || '',
+        domain: '',
+        jsHeapUsed: 0,
+        jsHeapTotal: 0,
+        domNodes: 0,
+        resourceCount: 0,
+        error: 'not injectable',
+      });
+      continue;
+    }
+
+    try {
+      const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          return {
+            jsHeapUsed: performance.memory?.usedJSHeapSize || 0,
+            jsHeapTotal: performance.memory?.totalJSHeapSize || 0,
+            domNodes: document.querySelectorAll('*').length,
+            resourceCount: performance.getEntriesByType('resource').length,
+          };
+        },
+      });
+      const domain = new URL(tab.url).hostname;
+      results.push({
+        id: tab.id,
+        title: tab.title || '(untitled)',
+        url: tab.url,
+        domain,
+        ...result,
+        error: null,
+      });
+    } catch (e) {
+      const domain = tab.url ? new URL(tab.url).hostname : '';
+      results.push({
+        id: tab.id,
+        title: tab.title || '(untitled)',
+        url: tab.url || '',
+        domain,
+        jsHeapUsed: 0,
+        jsHeapTotal: 0,
+        domNodes: 0,
+        resourceCount: 0,
+        error: e.message,
+      });
+    }
+  }
+
+  // Sort by JS heap descending
+  results.sort((a, b) => b.jsHeapUsed - a.jsHeapUsed);
+  return results;
+}
+
 // --- Message handler ---
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_DATA') {
@@ -76,6 +138,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ extensions: {}, settings: _DEFAULTS });
       }
     })();
+    return true;
+  }
+
+  if (message.type === 'GET_TABS') {
+    probeAllTabs().then(tabs => sendResponse({ tabs })).catch(e => {
+      console.error('[PerfMon] GET_TABS failed:', e);
+      sendResponse({ tabs: [] });
+    });
+    return true;
+  }
+
+  if (message.type === 'CLOSE_TAB') {
+    chrome.tabs.remove(message.tabId).then(() => sendResponse({ ok: true })).catch(e => {
+      sendResponse({ ok: false, error: e.message });
+    });
     return true;
   }
 
